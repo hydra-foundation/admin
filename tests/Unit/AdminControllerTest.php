@@ -10,6 +10,7 @@ use Hydra\Admin\Tests\Support\CrudUserSource;
 use Hydra\Admin\Tests\Support\CrudUsersModule;
 use Hydra\Authorization\Exceptions\AuthorizationException;
 use Hydra\Http\Exceptions\NotFoundException;
+use Hydra\Http\HtmxResponse;
 use Psr\Http\Message\ResponseInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -79,11 +80,12 @@ final class AdminControllerTest extends TestCase
     public function test_an_htmx_create_hands_back_the_row_it_wrote(): void
     {
         // A redirect would be turned into a full page load, so the row itself
-        // comes back and the URL is pushed after it.
+        // comes back and the URL is pushed after it — in the body, which is the
+        // only thing an htmx 4 client reads.
         $response = $this->handle('store', 'POST', '/admin/users/new', $this->admin->frame(), ['username' => 'linus']);
 
         $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('/admin/users/6', $response->getHeaderLine('HX-Push-Url'));
+        $this->assertSame('/admin/users/6', HtmxResponse::directive($response, 'push-url'));
         $this->assertStringContainsString('linus', (string) $response->getBody());
     }
 
@@ -145,7 +147,7 @@ final class AdminControllerTest extends TestCase
         );
 
         // Spelled out the way the table's own sort and page links spell it.
-        $this->assertSame('/admin/users?q=grace&sort=id&dir=asc', $response->getHeaderLine('HX-Push-Url'));
+        $this->assertSame('/admin/users?q=grace&sort=id&dir=asc', HtmxResponse::directive($response, 'push-url'));
         $this->assertStringContainsString('grace h', (string) $response->getBody());
     }
 
@@ -180,7 +182,7 @@ final class AdminControllerTest extends TestCase
             [...$this->admin->frame(), 'HX-Current-URL' => 'https://admin.test/admin/users?page=3'],
         );
 
-        $this->assertSame('/admin/users?sort=id&dir=asc&page=2', $response->getHeaderLine('HX-Push-Url'));
+        $this->assertSame('/admin/users?sort=id&dir=asc&page=2', HtmxResponse::directive($response, 'push-url'));
         $this->assertStringContainsString('alan', (string) $response->getBody());
     }
 

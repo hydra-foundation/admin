@@ -16,7 +16,6 @@ use Hydra\Admin\ViewModels\ShowViewModel;
 use Hydra\Authorization\Contracts\GateInterface;
 use Hydra\Http\Exceptions\NotFoundException;
 use Hydra\Http\Htmx;
-use Hydra\Http\HtmxResponse;
 use Hydra\Http\Input as SubmittedInput;
 use Hydra\Http\Query;
 use Hydra\Http\Responder;
@@ -213,7 +212,7 @@ final class AdminController
             return $this->respond->redirect($url);
         }
 
-        return (new HtmxResponse)
+        return $this->respond->htmx()
             ->pushUrl($url)
             ->applyTo($this->row($request, $blueprint, $screen, $id, $row, $notice));
     }
@@ -238,9 +237,9 @@ final class AdminController
     /**
      * Back to the list once a write is finished — the same view of it the write
      * was made from, not the first page of an unfiltered table. A plain redirect
-     * would be turned into an HX-Redirect and reload the whole page, so an htmx
-     * client is handed the list it was going to fetch anyway, with the URL pushed
-     * after it. A refusal is rendered rather than redirected, because a redirect
+     * would be turned into a client-side navigation and reload the whole page, so
+     * an htmx client is handed the list it was going to fetch anyway, with the URL
+     * pushed after it. A refusal is rendered rather than redirected, because a redirect
      * would throw away the only account of why the row is still there.
      */
     private function done(
@@ -257,7 +256,7 @@ final class AdminController
 
         $page = $this->rows($blueprint, $criteria);
 
-        return (new HtmxResponse)
+        return $this->respond->htmx()
             ->pushUrl($this->listUrl($blueprint, $page->criteria))
             ->applyTo($this->table($request, $blueprint, $page, $notice, $status));
     }
