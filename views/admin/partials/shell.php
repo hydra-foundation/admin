@@ -6,5 +6,5 @@
    and Renderer's constant with it — ShippedViewsTest holds them together. */ ?>
 <div class="admin d-flex align-items-stretch">
     <?= $this->partial('admin/partials/sidebar', ['screen' => $screen]) ?>
-    <div id="admin-frame" class="admin-frame flex-grow-1 p-4"><?= $content ?></div>
+    <div id="admin-frame" class="admin-frame flex-grow-1"><?= $content ?></div>
 </div>

@@ -40,7 +40,7 @@
             <?php foreach ($vm->page->rows as $row): ?>
                 <tr>
                     <?php foreach ($columns as $field): ?>
-                        <td><?= $this->e($vm->cell($field, $row)) ?></td>
+                        <td class="type-<?= $this->e($field->type()->value) ?>"><?= $this->e($vm->cell($field, $row)) ?></td>
                     <?php endforeach ?>
                     <?php if ($vm->hasRowActions()): ?>
                         <td class="text-end">

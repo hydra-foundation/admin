@@ -60,7 +60,7 @@
         </div>
     <?php endforeach ?>
 
-    <div class="d-flex gap-2">
+    <div class="admin-form-actions d-flex gap-2">
         <button type="submit" name="_action" value="save" class="btn btn-primary">Save</button>
         <?php if ($vm->canApply()): ?>
             <button type="submit" name="_action" value="apply" class="btn btn-outline-primary">Apply</button>

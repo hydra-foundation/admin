@@ -1,13 +1,13 @@
 <?php /** @var \Hydra\View\Template $this */ ?>
 <?php /** @var \Hydra\Admin\ViewModels\ShowViewModel $vm */ ?>
-<dl class="row col-12 col-xl-8">
+<dl class="admin-show row">
     <?php foreach ($vm->fields() as $field): ?>
-        <dt class="col-sm-3 text-body-secondary fw-normal"><?= $this->e($field->label()) ?></dt>
-        <dd class="col-sm-9 text-break"><?= $this->e($vm->value($field)) ?></dd>
+        <dt class="col-sm-3"><?= $this->e($field->label()) ?></dt>
+        <dd class="col-sm-9 text-break type-<?= $this->e($field->type()->value) ?>"><?= $this->e($vm->value($field)) ?></dd>
     <?php endforeach ?>
 </dl>
 
-<div class="d-flex gap-2">
+<div class="admin-show-actions d-flex gap-2">
     <?php if ($vm->editUrl() !== null): ?>
         <a class="btn btn-primary"
            href="<?= $this->e($vm->editUrl()) ?>"

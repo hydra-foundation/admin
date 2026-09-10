@@ -24,7 +24,7 @@
     </ol>
 </nav>
 
-<h1 class="h3 mb-3"><?= $this->e($screen->title) ?></h1>
+<h1 class="admin-title"><?= $this->e($screen->title) ?></h1>
 
 <?php if ($screen->notice !== null): ?>
     <div class="alert alert-<?= $this->e($screen->notice->style()) ?>"

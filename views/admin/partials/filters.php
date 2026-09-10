@@ -1,6 +1,6 @@
 <?php /** @var \Hydra\View\Template $this */ ?>
 <?php /** @var \Hydra\Admin\ViewModels\ListViewModel $vm */ ?>
-<div class="d-flex justify-content-between align-items-end gap-3 mb-3">
+<div class="admin-filters d-flex justify-content-between align-items-end gap-3">
 <form class="row g-2 align-items-end"
       hx-get="<?= $this->e($vm->url()) ?>"
       hx-target="#admin-body"

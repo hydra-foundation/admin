@@ -12,7 +12,7 @@
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
         <?php foreach ($modules as $module): ?>
             <div class="col">
-                <div class="card h-100">
+                <div class="card admin-tile h-100">
                     <div class="card-body">
                         <h2 class="card-title h5 mb-1">
                             <a class="stretched-link text-decoration-none text-body-emphasis"
