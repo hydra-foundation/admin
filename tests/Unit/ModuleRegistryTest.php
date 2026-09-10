@@ -118,6 +118,18 @@ final class ModuleRegistryTest extends TestCase
         $this->registry()->createSource($readOnly);
     }
 
+    public function test_a_source_that_writes_is_not_thereby_allowed_to_delete(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('delete screen');
+
+        $registry->deleteSource($blueprint);
+    }
+
     public function test_a_source_that_reads_only_pages_cannot_serve_a_screen_for_one_row(): void
     {
         $registry = $this->registry();

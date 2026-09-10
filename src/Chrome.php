@@ -30,7 +30,7 @@ final class Chrome
     }
 
     /** A module's own screen, hung under the admin root. */
-    public function module(Blueprint $blueprint, ?string $title = null, ?string $notice = null): ScreenViewModel
+    public function module(Blueprint $blueprint, ?string $title = null, ?Notice $notice = null): ScreenViewModel
     {
         return new ScreenViewModel(
             $title ?? $blueprint->title,
@@ -47,7 +47,7 @@ final class Chrome
      * A screen below a module, with the module's own root above it. The crumb
      * names the row where the title names the task: "Edit 42" under "Edit user".
      */
-    public function screen(Blueprint $blueprint, string $title, ?string $crumb = null, ?string $notice = null): ScreenViewModel
+    public function screen(Blueprint $blueprint, string $title, ?string $crumb = null, ?Notice $notice = null): ScreenViewModel
     {
         return new ScreenViewModel(
             $title,

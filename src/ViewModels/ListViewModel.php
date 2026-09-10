@@ -7,6 +7,7 @@ namespace Hydra\Admin\ViewModels;
 use Hydra\Admin\Blueprint;
 use Hydra\Admin\Field;
 use Hydra\Admin\Page;
+use Hydra\Admin\Screens\DeleteScreen;
 use Hydra\Admin\Screens\FormScreen;
 use Hydra\Admin\Screens\ShowScreen;
 use Hydra\Admin\Surface;
@@ -108,10 +109,33 @@ final readonly class ListViewModel
         return $this->blueprint->screen('show') instanceof ShowScreen;
     }
 
+    public function isDeletable(): bool
+    {
+        return $this->blueprint->screen('delete') instanceof DeleteScreen;
+    }
+
+    /**
+     * Where this row is deleted, or null on the same terms as the others.
+     *
+     * @param array<string, mixed> $row
+     */
+    public function deleteUrl(array $row): ?string
+    {
+        return $this->isDeletable() ? $this->rowUrl('delete', $row) : null;
+    }
+
+    /** What the visitor is asked before a row goes. */
+    public function deletePrompt(): string
+    {
+        $screen = $this->blueprint->screen('delete');
+
+        return $screen instanceof DeleteScreen ? $screen->prompt() : '';
+    }
+
     /** Whether any row action needs a column of its own. */
     public function hasRowActions(): bool
     {
-        return $this->isEditable() || $this->isViewable();
+        return $this->isEditable() || $this->isViewable() || $this->isDeletable();
     }
 
     /** @param array<string, mixed> $row */

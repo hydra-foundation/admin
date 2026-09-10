@@ -6,6 +6,7 @@ namespace Hydra\Admin\ViewModels;
 
 use Hydra\Admin\Blueprint;
 use Hydra\Admin\Field;
+use Hydra\Admin\Screens\DeleteScreen;
 use Hydra\Admin\Screens\FormScreen;
 use Hydra\Admin\Surface;
 use Hydra\View\HtmlView;
@@ -45,16 +46,33 @@ final readonly class ShowViewModel
     /** Where this row is edited, or null when the module declares no edit screen. */
     public function editUrl(): ?string
     {
-        $screen = $this->blueprint->screen('edit');
+        return $this->blueprint->screen('edit') instanceof FormScreen
+            ? $this->rowUrl('edit')
+            : null;
+    }
 
-        if (!$screen instanceof FormScreen) {
-            return null;
-        }
+    /** Where this row is deleted, or null when the module declares no delete screen. */
+    public function deleteUrl(): ?string
+    {
+        return $this->blueprint->screen('delete') instanceof DeleteScreen
+            ? $this->rowUrl('delete')
+            : null;
+    }
 
-        return $this->listUrl() . '/' . str_replace(
-            '{id}',
-            rawurlencode($this->id),
-            trim($screen->path(), '/'),
-        );
+    /** What the visitor is asked before the row goes. */
+    public function deletePrompt(): string
+    {
+        $screen = $this->blueprint->screen('delete');
+
+        return $screen instanceof DeleteScreen ? $screen->prompt() : '';
+    }
+
+    private function rowUrl(string $screen): ?string
+    {
+        $path = $this->blueprint->screen($screen)?->path();
+
+        return $path === null
+            ? null
+            : $this->listUrl() . '/' . str_replace('{id}', rawurlencode($this->id), trim($path, '/'));
     }
 }

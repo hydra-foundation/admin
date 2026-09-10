@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hydra\Admin;
 
 use Hydra\Admin\Contracts\CreateSourceInterface;
+use Hydra\Admin\Contracts\DeleteSourceInterface;
 use Hydra\Admin\Contracts\ModuleInterface;
 use Hydra\Admin\Contracts\PresenterInterface;
 use Hydra\Admin\Contracts\RowSourceInterface;
@@ -176,6 +177,21 @@ final class ModuleRegistry
                 'Admin module "%s" has an edit screen, so its source must implement %s.',
                 $blueprint->slug,
                 UpdateSourceInterface::class,
+            ));
+        }
+
+        return $source;
+    }
+
+    public function deleteSource(Blueprint $blueprint): DeleteSourceInterface
+    {
+        $source = $this->sourceFor($blueprint);
+
+        if (!$source instanceof DeleteSourceInterface) {
+            throw new RuntimeException(sprintf(
+                'Admin module "%s" has a delete screen, so its source must implement %s.',
+                $blueprint->slug,
+                DeleteSourceInterface::class,
             ));
         }
 

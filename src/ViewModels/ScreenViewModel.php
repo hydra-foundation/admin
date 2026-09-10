@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hydra\Admin\ViewModels;
 
+use Hydra\Admin\Notice;
+
 /**
  * Screen view model
  *
@@ -22,6 +24,6 @@ final readonly class ScreenViewModel
         public string $title,
         public array $navigation,
         public array $breadcrumbs,
-        public ?string $notice = null,
+        public ?Notice $notice = null,
     ) {}
 }

@@ -6,6 +6,7 @@ namespace Hydra\Admin;
 
 use Hydra\Admin\Contracts\ScreenInterface;
 use Hydra\Admin\Exceptions\WriteRejected;
+use Hydra\Admin\Screens\DeleteScreen;
 use Hydra\Admin\Screens\FormScreen;
 use Hydra\Admin\Screens\PageScreen;
 use Hydra\Admin\Screens\ShowScreen;
@@ -122,7 +123,7 @@ final class AdminController
             return $this->form($request, $blueprint, $screen, null, $submitted, $rejected->errors(), Status::UnprocessableEntity);
         }
 
-        return $this->done($request, $blueprint, 'Created');
+        return $this->done($request, $blueprint, Notice::success('Created'));
     }
 
     public function edit(Request $request): Response
@@ -162,22 +163,54 @@ final class AdminController
         $saved = $source->find($id) ?? $submitted;
 
         if (SubmittedInput::fromRequest($request)->string('_action') === 'apply') {
-            return $this->form($request, $blueprint, $screen, $id, $saved, notice: 'Saved');
+            return $this->form($request, $blueprint, $screen, $id, $saved, notice: Notice::success('Saved'));
         }
 
-        return $this->done($request, $blueprint);
+        return $this->done($request, $blueprint, Notice::success('Saved'));
     }
 
     /**
-     * Back to the list once a save is finished. A plain redirect would be turned
-     * into an HX-Redirect and reload the whole page, so an htmx client is handed
-     * the list it was going to fetch anyway, with the URL pushed after it.
+     * The row goes, and the list it came from comes back. Nothing is confirmed
+     * here: a POST is the confirmation, and refusing one is the source's right.
      */
-    private function done(Request $request, Blueprint $blueprint, string $notice = 'Saved'): Response
+    public function destroy(Request $request): Response
     {
+        [$blueprint, $screen, $id] = $this->resolveRow($request);
+
+        if (!$screen instanceof DeleteScreen) {
+            throw new NotFoundException;
+        }
+
+        try {
+            $this->registry->deleteSource($blueprint)->delete($id);
+        } catch (WriteRejected $rejected) {
+            return $this->done(
+                $request,
+                $blueprint,
+                Notice::failure(implode(' ', $rejected->errors())),
+                Status::UnprocessableEntity,
+            );
+        }
+
+        return $this->done($request, $blueprint, Notice::success('Deleted'));
+    }
+
+    /**
+     * Back to the list once a write is finished. A plain redirect would be turned
+     * into an HX-Redirect and reload the whole page, so an htmx client is handed
+     * the list it was going to fetch anyway, with the URL pushed after it. A
+     * refusal is rendered rather than redirected, because a redirect would throw
+     * away the only account of why the row is still there.
+     */
+    private function done(
+        Request $request,
+        Blueprint $blueprint,
+        ?Notice $notice = null,
+        Status $status = Status::Ok,
+    ): Response {
         $url = $this->registry->root($blueprint);
 
-        if (!Htmx::fromRequest($request)->isHtmx()) {
+        if (!Htmx::fromRequest($request)->isHtmx() && $status === Status::Ok) {
             return $this->respond->redirect($url);
         }
 
@@ -185,11 +218,16 @@ final class AdminController
 
         return (new HtmxResponse)
             ->pushUrl($url)
-            ->applyTo($this->table($request, $blueprint, $criteria, $notice));
+            ->applyTo($this->table($request, $blueprint, $criteria, $notice, $status));
     }
 
-    private function table(Request $request, Blueprint $blueprint, Criteria $criteria, ?string $notice = null): Response
-    {
+    private function table(
+        Request $request,
+        Blueprint $blueprint,
+        Criteria $criteria,
+        ?Notice $notice = null,
+        int|Status $status = Status::Ok,
+    ): Response {
         return $this->renderer->screen(
             $request,
             $this->chrome->module($blueprint, notice: $notice),
@@ -202,6 +240,7 @@ final class AdminController
                 ),
             ],
             toolbar: 'admin/partials/filters',
+            status: $status,
         );
     }
 
@@ -237,7 +276,7 @@ final class AdminController
         array $values,
         array $errors = [],
         int|Status $status = Status::Ok,
-        ?string $notice = null,
+        ?Notice $notice = null,
     ): Response {
         return $this->renderer->screen(
             $request,
