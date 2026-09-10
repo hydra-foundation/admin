@@ -21,6 +21,7 @@ final class Definition
 {
     private string $title;
     private ?string $icon = null;
+    private ?string $group = null;
     private ?string $ability = null;
     private SourceInterface|string|null $source = null;
 
@@ -56,6 +57,19 @@ final class Definition
     {
         $clone = clone $this;
         $clone->icon = $icon;
+
+        return $clone;
+    }
+
+    /**
+     * The heading this module sits under in the sidebar. Purely how the menu is
+     * organised — modules in a group need not relate to each other, and nothing
+     * about a group is addressable, so it is a label and not a screen.
+     */
+    public function group(string $group): self
+    {
+        $clone = clone $this;
+        $clone->group = $group;
 
         return $clone;
     }
@@ -157,6 +171,7 @@ final class Definition
             slug: $this->slug,
             title: $this->title,
             icon: $this->icon,
+            group: $this->group,
             ability: $this->ability,
             source: $this->source,
             fields: $this->fields,

@@ -14,7 +14,7 @@ use Hydra\Authorization\Contracts\GateInterface;
  */
 final class Navigation
 {
-    /** @var list<array{slug: string, title: string, icon: ?string, url: string}>|null */
+    /** @var list<array{slug: string, title: string, icon: ?string, group: ?string, url: string}>|null */
     private ?array $reachable = null;
 
     public function __construct(
@@ -22,7 +22,7 @@ final class Navigation
         private readonly GateInterface $gate,
     ) {}
 
-    /** @return list<array{slug: string, title: string, icon: ?string, url: string, active: bool}> */
+    /** @return list<array{slug: string, title: string, icon: ?string, group: ?string, url: string, active: bool}> */
     public function items(?string $current = null): array
     {
         return array_map(
@@ -47,7 +47,7 @@ final class Navigation
      * answers for whoever is signed in, and that is settled before a screen is
      * built and does not change while one is being rendered.
      *
-     * @return list<array{slug: string, title: string, icon: ?string, url: string}>
+     * @return list<array{slug: string, title: string, icon: ?string, group: ?string, url: string}>
      */
     private function reachable(): array
     {
@@ -66,6 +66,7 @@ final class Navigation
                 'slug' => $blueprint->slug,
                 'title' => $blueprint->title,
                 'icon' => $blueprint->icon,
+                'group' => $blueprint->group,
                 'url' => $this->registry->root($blueprint),
             ];
         }

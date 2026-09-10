@@ -37,6 +37,7 @@ final class Chrome
             $this->navigation->items($blueprint->slug),
             [
                 $this->home(),
+                ...$this->under($blueprint),
                 ['label' => $title ?? $blueprint->title, 'url' => null],
             ],
             $notice,
@@ -54,11 +55,26 @@ final class Chrome
             $this->navigation->items($blueprint->slug),
             [
                 $this->home(),
+                ...$this->under($blueprint),
                 ['label' => $blueprint->title, 'url' => $this->registry->root($blueprint)],
                 ['label' => $crumb ?? $title, 'url' => null],
             ],
             $notice,
         );
+    }
+
+    /**
+     * The sidebar heading a module sits under, as a crumb with nothing behind
+     * it — a group is a label, not a screen, so there is nowhere for it to go.
+     * A module that declared no group contributes no crumb.
+     *
+     * @return list<array{label: string, url: null}>
+     */
+    private function under(Blueprint $blueprint): array
+    {
+        return $blueprint->group === null
+            ? []
+            : [['label' => $blueprint->group, 'url' => null]];
     }
 
     /**

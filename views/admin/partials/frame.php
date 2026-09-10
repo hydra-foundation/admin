@@ -5,8 +5,12 @@
 <?php /** @var array<string, mixed> $data */ ?>
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-        <?php foreach ($screen->breadcrumbs as $crumb): ?>
-            <li class="breadcrumb-item<?= $crumb['url'] === null ? ' active' : '' ?>">
+        <?php /* The last crumb is where the visitor is; an earlier one without a
+           url is a name with no page behind it, such as a sidebar group. Those
+           are two different things and only the first is "active". */ ?>
+        <?php $last = count($screen->breadcrumbs) - 1 ?>
+        <?php foreach ($screen->breadcrumbs as $position => $crumb): ?>
+            <li class="breadcrumb-item<?= $position === $last ? ' active' : '' ?>">
                 <?php if ($crumb['url'] === null): ?>
                     <?= $this->e($crumb['label']) ?>
                 <?php else: ?>
