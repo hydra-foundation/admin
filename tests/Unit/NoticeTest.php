@@ -18,6 +18,15 @@ final class NoticeTest extends TestCase
         $this->assertSame('status', $notice->role());
     }
 
+    public function test_the_admins_own_wording_lives_in_one_place(): void
+    {
+        // The controller says what happened; what that reads as is decided here.
+        $this->assertSame('Created', Notice::created()->text);
+        $this->assertSame('Saved', Notice::saved()->text);
+        $this->assertSame('Deleted', Notice::deleted()->text);
+        $this->assertSame('status', Notice::deleted()->role());
+    }
+
     public function test_a_failure_announces_itself(): void
     {
         $notice = Notice::failure('That row is spoken for.');

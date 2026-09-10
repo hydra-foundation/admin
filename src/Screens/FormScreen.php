@@ -46,12 +46,6 @@ final class FormScreen implements ScreenInterface, SubmittableInterface
         return new self('edit', self::rowPath($path), 'edit', 'update');
     }
 
-    /** Whether this form writes a row that does not exist yet. */
-    public function isCreate(): bool
-    {
-        return $this->name === 'create';
-    }
-
     public function inputs(Input ...$inputs): self
     {
         $clone = clone $this;

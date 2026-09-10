@@ -62,7 +62,7 @@ final class Field
         return new self($name, FieldType::DateTime);
     }
 
-    public function label(string $label): self
+    public function labelled(string $label): self
     {
         $clone = clone $this;
         $clone->label = $label;
@@ -157,7 +157,7 @@ final class Field
         return $this->type;
     }
 
-    public function heading(): string
+    public function label(): string
     {
         return $this->label;
     }

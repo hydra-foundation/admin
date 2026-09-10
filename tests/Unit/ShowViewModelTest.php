@@ -85,7 +85,7 @@ final class ShowViewModelTest extends TestCase
             ->fields(
                 Field::id(),
                 Field::text('username'),
-                Field::text('user_agent')->label('Agent')->hiddenOn(Surface::List),
+                Field::text('user_agent')->labelled('Agent')->hiddenOn(Surface::List),
                 Field::select('role', ['admin' => 'Administrator', 'user' => 'User']),
             )
             ->screens(

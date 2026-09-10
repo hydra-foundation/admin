@@ -12,9 +12,9 @@ use PHPUnit\Framework\TestCase;
 
 final class FieldTest extends TestCase
 {
-    public function test_it_humanizes_the_name_into_a_default_heading(): void
+    public function test_it_humanizes_the_name_into_a_default_label(): void
     {
-        $this->assertSame('Created at', Field::datetime('created_at')->heading());
+        $this->assertSame('Created at', Field::datetime('created_at')->label());
     }
 
     public function test_fluent_calls_do_not_mutate_the_original(): void

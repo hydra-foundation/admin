@@ -81,11 +81,6 @@ final readonly class ListViewModel
         return $this->isViewable() ? $this->rowUrl('show', $row) : null;
     }
 
-    public function isEditable(): bool
-    {
-        return $this->blueprint->screen('edit') instanceof FormScreen;
-    }
-
     /** Where a new row is written, or null when the module declares no create screen. */
     public function createUrl(): ?string
     {
@@ -102,16 +97,6 @@ final readonly class ListViewModel
         $screen = $this->blueprint->screen('create');
 
         return ($screen instanceof FormScreen ? $screen->heading() : null) ?? 'New';
-    }
-
-    public function isViewable(): bool
-    {
-        return $this->blueprint->screen('show') instanceof ShowScreen;
-    }
-
-    public function isDeletable(): bool
-    {
-        return $this->blueprint->screen('delete') instanceof DeleteScreen;
     }
 
     /**
@@ -185,6 +170,25 @@ final readonly class ListViewModel
         );
 
         return range($first, min($last, $first + $width - 1));
+    }
+
+    /**
+     * Whether the module declares each row action. Nothing outside asks: a
+     * template reads the url, and null already says the action is not offered.
+     */
+    private function isEditable(): bool
+    {
+        return $this->blueprint->screen('edit') instanceof FormScreen;
+    }
+
+    private function isViewable(): bool
+    {
+        return $this->blueprint->screen('show') instanceof ShowScreen;
+    }
+
+    private function isDeletable(): bool
+    {
+        return $this->blueprint->screen('delete') instanceof DeleteScreen;
     }
 
     /**

@@ -11,7 +11,7 @@ use Hydra\Admin\Contracts\ScreenInterface;
  * Page screen
  *
  * A screen that is just a template: a dashboard, a report, a settings page.
- * Left alone it renders through the admin's own controller; handedBy() points it
+ * Left alone it renders through the admin's own controller; handledBy() points it
  * at one of your controller actions instead, which keeps the layout, breadcrumbs
  * and ability while the action is ordinary Hydra code.
  */
@@ -62,7 +62,7 @@ final class PageScreen implements ScreenInterface
     }
 
     /** @param class-string $presenter a PresenterInterface service id */
-    public function presenter(string $presenter): self
+    public function presentedBy(string $presenter): self
     {
         $clone = clone $this;
         $clone->presenter = $presenter;
@@ -115,7 +115,7 @@ final class PageScreen implements ScreenInterface
     }
 
     /** @return class-string|null */
-    public function presenterService(): ?string
+    public function presenter(): ?string
     {
         return $this->presenter;
     }

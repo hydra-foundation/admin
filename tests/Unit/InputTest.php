@@ -13,8 +13,8 @@ final class InputTest extends TestCase
 {
     public function test_it_labels_itself_from_its_name(): void
     {
-        $this->assertSame('User agent', Input::text('user_agent')->heading());
-        $this->assertSame('Agent', Input::text('user_agent')->label('Agent')->heading());
+        $this->assertSame('User agent', Input::text('user_agent')->label());
+        $this->assertSame('Agent', Input::text('user_agent')->labelled('Agent')->label());
     }
 
     public function test_only_required_marks_an_input_required(): void

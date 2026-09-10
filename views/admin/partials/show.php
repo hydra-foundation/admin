@@ -2,7 +2,7 @@
 <?php /** @var \Hydra\Admin\ViewModels\ShowViewModel $vm */ ?>
 <dl class="row col-12 col-xl-8">
     <?php foreach ($vm->fields() as $field): ?>
-        <dt class="col-sm-3 text-body-secondary fw-normal"><?= $this->e($field->heading()) ?></dt>
+        <dt class="col-sm-3 text-body-secondary fw-normal"><?= $this->e($field->label()) ?></dt>
         <dd class="col-sm-9 text-break"><?= $this->e($vm->value($field)) ?></dd>
     <?php endforeach ?>
 </dl>

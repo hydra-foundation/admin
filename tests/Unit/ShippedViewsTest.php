@@ -33,6 +33,26 @@ final class ShippedViewsTest extends TestCase
         }
     }
 
+    /**
+     * A shipped template reaching for one the application happens to have is
+     * the same hole seen from the other side: it renders here and 500s in the
+     * next application. Every partial a shipped template pulls in is named
+     * outright, so scan for the call rather than for the naming convention.
+     */
+    public function test_no_shipped_template_reaches_for_one_the_application_owns(): void
+    {
+        $pulled = $this->matchesInShippedViews("~partial\('([^']+)'~");
+
+        $this->assertNotEmpty($pulled);
+
+        foreach ($pulled as $name) {
+            $this->assertFileExists(
+                AdminServiceProvider::views() . '/' . $name . '.php',
+                "a shipped template renders \"{$name}\", which the package does not ship",
+            );
+        }
+    }
+
     public function test_the_shipped_views_are_where_the_provider_says_they_are(): void
     {
         $this->assertDirectoryExists(AdminServiceProvider::views());

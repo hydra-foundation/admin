@@ -12,14 +12,14 @@
       hx-swap="innerHTML">
     <?= $this->csrf() ?>
 
-    <?= $this->partial('partials/form_errors', ['errors' => $vm->formErrors()]) ?>
+    <?= $this->partial('admin/partials/errors', ['errors' => $vm->formErrors()]) ?>
 
     <?php foreach ($vm->controls() as $control): ?>
         <?php $id = 'field-' . $control->name() ?>
         <?php $invalid = $vm->hasError($control->name()) ? ' is-invalid' : '' ?>
         <div class="mb-3">
             <label for="<?= $this->e($id) ?>" class="form-label">
-                <?= $this->e($control->heading()) ?>
+                <?= $this->e($control->label()) ?>
                 <?php if ($control->isRequired()): ?>
                     <span class="text-danger" aria-hidden="true">*</span>
                 <?php endif ?>

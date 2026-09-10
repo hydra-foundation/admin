@@ -17,7 +17,7 @@
 
     <?php foreach ($vm->filters() as $field): ?>
         <div class="col-auto">
-            <label class="form-label" for="admin-filter-<?= $this->e($field->name()) ?>"><?= $this->e($field->heading()) ?></label>
+            <label class="form-label" for="admin-filter-<?= $this->e($field->name()) ?>"><?= $this->e($field->label()) ?></label>
             <select class="form-select" id="admin-filter-<?= $this->e($field->name()) ?>" name="<?= $this->e($field->name()) ?>">
                 <option value="">All</option>
                 <?php foreach ($field->options() ?? [] as $value => $label): ?>

@@ -59,7 +59,7 @@ final class Input
         return new self($name, InputType::Select, $options);
     }
 
-    public function label(string $label): self
+    public function labelled(string $label): self
     {
         $clone = clone $this;
         $clone->label = $label;
@@ -110,7 +110,7 @@ final class Input
         return $this->type;
     }
 
-    public function heading(): string
+    public function label(): string
     {
         return $this->label;
     }

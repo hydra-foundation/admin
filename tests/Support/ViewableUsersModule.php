@@ -19,7 +19,7 @@ final class ViewableUsersModule implements ModuleInterface
             ->fields(
                 Field::id(),
                 Field::text('username'),
-                Field::text('user_agent')->label('Agent')->hiddenOn(Surface::List),
+                Field::text('user_agent')->labelled('Agent')->hiddenOn(Surface::List),
             )
             ->screens(ShowScreen::make());
     }

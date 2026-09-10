@@ -184,7 +184,7 @@ final class ModuleRegistry
     /** @return array<string, mixed> */
     public function present(PageScreen $screen): array
     {
-        $service = $screen->presenterService();
+        $service = $screen->presenter();
 
         if ($service === null) {
             return [];

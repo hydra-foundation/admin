@@ -48,8 +48,6 @@ final class FormScreenTest extends TestCase
 
         $this->assertSame('create', $screen->name());
         $this->assertSame('new', $screen->path());
-        $this->assertTrue($screen->isCreate());
-        $this->assertFalse(FormScreen::edit()->isCreate());
         $this->assertSame([AdminController::class, 'create'], $screen->handler());
         $this->assertSame([AdminController::class, 'store'], $screen->submitHandler());
     }

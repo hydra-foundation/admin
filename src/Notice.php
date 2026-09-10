@@ -28,6 +28,27 @@ final readonly class Notice
         return new self($text, true);
     }
 
+    /**
+     * The three a write leaves behind. The controller says what happened rather
+     * than what to print, which keeps the admin's own wording in one class —
+     * the whole of it, so translating the admin is a question about this file
+     * and not a search across the package.
+     */
+    public static function created(): self
+    {
+        return self::success('Created');
+    }
+
+    public static function saved(): self
+    {
+        return self::success('Saved');
+    }
+
+    public static function deleted(): self
+    {
+        return self::success('Deleted');
+    }
+
     /** The Bootstrap contextual suffix, and the only styling decision here. */
     public function style(): string
     {

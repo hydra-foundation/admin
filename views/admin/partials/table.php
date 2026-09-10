@@ -21,13 +21,13 @@
                                hx-get="<?= $this->e($vm->sortLink($field)) ?>"
                                hx-target="#admin-body"
                                hx-push-url="true">
-                                <?= $this->e($field->heading()) ?>
+                                <?= $this->e($field->label()) ?>
                                 <?php if ($vm->sortedBy($field) !== null): ?>
                                     <span aria-hidden="true"><?= $vm->sortedBy($field) === 'asc' ? '&uarr;' : '&darr;' ?></span>
                                 <?php endif ?>
                             </a>
                         <?php else: ?>
-                            <?= $this->e($field->heading()) ?>
+                            <?= $this->e($field->label()) ?>
                         <?php endif ?>
                     </th>
                 <?php endforeach ?>

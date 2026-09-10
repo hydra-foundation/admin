@@ -159,10 +159,10 @@ final class AdminController
         $saved = $source->find($id) ?? $submitted;
 
         if (SubmittedInput::fromRequest($request)->string('_action') === 'apply') {
-            return $this->form($request, $blueprint, $screen, $id, $saved, notice: Notice::success('Saved.'));
+            return $this->form($request, $blueprint, $screen, $id, $saved, notice: Notice::saved());
         }
 
-        return $this->done($request, $blueprint, Notice::success('Saved.'));
+        return $this->done($request, $blueprint, Notice::saved());
     }
 
     /**
@@ -188,7 +188,7 @@ final class AdminController
             );
         }
 
-        return $this->done($request, $blueprint, Notice::success('Deleted'));
+        return $this->done($request, $blueprint, Notice::deleted());
     }
 
     /**
@@ -200,7 +200,7 @@ final class AdminController
      */
     private function written(Request $request, Blueprint $blueprint, string $id): Response
     {
-        $notice = Notice::success('Created');
+        $notice = Notice::created();
         $screen = $blueprint->screen('show');
         $url = $this->registry->rowUrl($blueprint, 'show', $id);
         $row = $screen instanceof ShowScreen ? $this->registry->rowSource($blueprint)->find($id) : null;
