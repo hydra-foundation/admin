@@ -30,6 +30,16 @@ final class AdminServiceProvider extends ServiceProvider
         private readonly array $middleware = [],
     ) {}
 
+    /**
+     * The templates this package ships. Hand it to the view as a fallback and
+     * the admin renders with no templates of your own; put a file of the same
+     * name in the application's views and that one is used instead.
+     */
+    public static function views(): string
+    {
+        return dirname(__DIR__) . '/views';
+    }
+
     public function register(ContainerInterface $container): void
     {
         $container->singleton(ModuleRegistry::class, function () use ($container) {
