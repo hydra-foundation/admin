@@ -6,7 +6,10 @@ namespace Hydra\Admin\Tests\Unit;
 
 use Hydra\Admin\Definition;
 use Hydra\Admin\Field;
+use Hydra\Admin\Input;
+use Hydra\Admin\Screens\FormScreen;
 use Hydra\Admin\Screens\ListScreen;
+use Hydra\Admin\Screens\ShowScreen;
 use Hydra\Admin\Surface;
 use Hydra\Admin\Tests\Support\ArraySource;
 use LogicException;
@@ -119,4 +122,28 @@ final class DefinitionTest extends TestCase
         $this->assertCount(1, $blueprint->searchable());
         $this->assertCount(1, $blueprint->filterable());
     }
+    public function test_a_row_screen_needs_a_field_that_names_a_row(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('no Field::id() to name one with');
+
+        Definition::make('users')
+            ->source(new ArraySource)
+            ->fields(Field::text('username'))
+            ->screens(ShowScreen::make())
+            ->compile();
+    }
+
+    public function test_a_module_with_no_row_screen_needs_no_field_that_names_one(): void
+    {
+        $blueprint = Definition::make('users')
+            ->source(new ArraySource)
+            ->fields(Field::text('username'))
+            ->screens(FormScreen::create()->inputs(Input::text('username')))
+            ->compile();
+
+        $this->assertNull($blueprint->identifier());
+        $this->assertSame('new', $blueprint->screen('create')?->path());
+    }
+
 }

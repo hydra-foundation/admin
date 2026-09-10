@@ -13,6 +13,7 @@ use Hydra\Admin\ModuleScanner;
 use Hydra\Admin\Screens\DeleteScreen;
 use Hydra\Admin\Tests\Support\ArrayContainer;
 use Hydra\Admin\Tests\Support\ArraySource;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 
 final class DeleteScreenTest extends TestCase
@@ -66,6 +67,14 @@ final class DeleteScreenTest extends TestCase
             'delete',
             $registry->screenAt($this->blueprint(), '/admin/users/42/delete', 'POST')?->name(),
         );
+    }
+
+    public function test_a_path_that_names_no_row_is_rejected_where_it_is_declared(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('must carry {id}');
+
+        DeleteScreen::make('remove');
     }
 
     private function blueprint(): Blueprint

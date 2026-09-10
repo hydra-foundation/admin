@@ -84,6 +84,19 @@ final class ModuleRegistry
         return rtrim($this->prefix, '/') . '/' . $blueprint->slug;
     }
 
+    /**
+     * Where a named screen of this module sits for one row, or null when the module
+     * declares no such screen.
+     */
+    public function rowUrl(Blueprint $blueprint, string $screen, string $id): ?string
+    {
+        $path = $blueprint->screen($screen)?->path();
+
+        return $path === null
+            ? null
+            : $this->root($blueprint) . '/' . str_replace('{id}', rawurlencode($id), trim($path, '/'));
+    }
+
     public function fromPath(string $path): ?Blueprint
     {
         $prefix = rtrim($this->prefix, '/');

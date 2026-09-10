@@ -14,7 +14,10 @@ namespace Hydra\Admin\Contracts;
 interface CreateSourceInterface
 {
     /**
-     * The id of the row written, so the screen can send the visitor to it.
+     * The id of the row written. The admin opens that row when the module declares
+     * a show screen, so this is the same id {@see RowSourceInterface::find()} is
+     * asked for; a module with no screen for one row is never asked to make it
+     * mean anything.
      *
      * @param array<string, mixed> $data the validated subset, keyed by input name
      */

@@ -84,12 +84,7 @@ final class AdminController
             throw new NotFoundException;
         }
 
-        return $this->renderer->screen(
-            $request,
-            $this->chrome->screen($blueprint, $screen->heading() ?? $blueprint->title, $id),
-            'admin/partials/show',
-            ['vm' => new ShowViewModel($blueprint, $id, $this->registry->prefix(), $row)],
-        );
+        return $this->row($request, $blueprint, $screen, $id, $row);
     }
 
     public function create(Request $request): Response
@@ -119,12 +114,12 @@ final class AdminController
         }
 
         try {
-            $this->registry->createSource($blueprint)->create($result->validated());
+            $id = $this->registry->createSource($blueprint)->create($result->validated());
         } catch (WriteRejected $rejected) {
             return $this->form($request, $blueprint, $screen, null, $submitted, $rejected->errors(), Status::UnprocessableEntity);
         }
 
-        return $this->done($request, $blueprint, Notice::success('Created'));
+        return $this->written($request, $blueprint, $id);
     }
 
     public function edit(Request $request): Response
@@ -194,6 +189,50 @@ final class AdminController
         }
 
         return $this->done($request, $blueprint, Notice::success('Deleted'));
+    }
+
+    /**
+     * Where a new row leaves the visitor: on the row itself, which is what the id
+     * {@see \Hydra\Admin\Contracts\CreateSourceInterface::create()} returns is
+     * for. A module with no screen for one row has nowhere to open, and comes back
+     * to the list like any other write — as does a row the source cannot find
+     * again, since the write did happen and the list is what can still be shown.
+     */
+    private function written(Request $request, Blueprint $blueprint, string $id): Response
+    {
+        $notice = Notice::success('Created');
+        $screen = $blueprint->screen('show');
+        $url = $this->registry->rowUrl($blueprint, 'show', $id);
+        $row = $screen instanceof ShowScreen ? $this->registry->rowSource($blueprint)->find($id) : null;
+
+        if (!$screen instanceof ShowScreen || $url === null || $row === null) {
+            return $this->done($request, $blueprint, $notice);
+        }
+
+        if (!Htmx::fromRequest($request)->isHtmx()) {
+            return $this->respond->redirect($url);
+        }
+
+        return (new HtmxResponse)
+            ->pushUrl($url)
+            ->applyTo($this->row($request, $blueprint, $screen, $id, $row, $notice));
+    }
+
+    /** @param array<string, mixed> $row */
+    private function row(
+        Request $request,
+        Blueprint $blueprint,
+        ShowScreen $screen,
+        string $id,
+        array $row,
+        ?Notice $notice = null,
+    ): Response {
+        return $this->renderer->screen(
+            $request,
+            $this->chrome->screen($blueprint, $screen->heading() ?? $blueprint->title, $id, $notice),
+            'admin/partials/show',
+            ['vm' => new ShowViewModel($blueprint, $id, $this->registry->prefix(), $row)],
+        );
     }
 
     /**

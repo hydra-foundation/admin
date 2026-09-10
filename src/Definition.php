@@ -121,6 +121,7 @@ final class Definition
     public function compile(): Blueprint
     {
         $this->assertSearchableFieldsAreFindable();
+        $this->assertRowScreensHaveSomethingToName();
 
         $screens = $this->screens;
 
@@ -179,6 +180,39 @@ final class Definition
                 . 'stored value survives into the output, or emptyAs() for a null placeholder.',
                 $this->slug,
                 $field->name(),
+            ));
+        }
+    }
+
+    /**
+     * A screen whose path carries {id} is handed one from the request and hands it
+     * to the source. The table has to be able to put one there in the first place,
+     * and Field::id() is what says which column that is — without it the row links
+     * simply never render, which is a hard thing to notice and a harder one to
+     * explain.
+     */
+    private function assertRowScreensHaveSomethingToName(): void
+    {
+        $identified = false;
+
+        foreach ($this->fields as $field) {
+            $identified = $identified || $field->type() === FieldType::Id;
+        }
+
+        if ($identified) {
+            return;
+        }
+
+        foreach ($this->screens as $screen) {
+            if (!str_contains($screen->path(), '{id}')) {
+                continue;
+            }
+
+            throw new LogicException(sprintf(
+                'Admin module "%s" declares a screen at "%s" that answers for one row, '
+                . 'but no Field::id() to name one with.',
+                $this->slug,
+                $screen->path(),
             ));
         }
     }

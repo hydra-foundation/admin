@@ -16,6 +16,8 @@ use Hydra\Admin\Contracts\ScreenInterface;
  */
 final class DeleteScreen implements ScreenInterface
 {
+    use RowPath;
+
     private const CONFIRM = 'Delete this row? This cannot be undone.';
 
     private string $confirm = self::CONFIRM;
@@ -26,7 +28,7 @@ final class DeleteScreen implements ScreenInterface
     /** The path must carry the id the source deletes. */
     public static function make(string $path = '{id}/delete'): self
     {
-        return new self($path);
+        return new self(self::rowPath($path));
     }
 
     /** What the visitor is asked before the row goes. */

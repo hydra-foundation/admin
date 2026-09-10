@@ -16,6 +16,7 @@ use Hydra\Admin\Screens\PageScreen;
 use Hydra\Admin\Screens\ShowScreen;
 use Hydra\Admin\Tests\Support\ArrayContainer;
 use Hydra\Admin\Tests\Support\ArraySource;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 
 final class ShowScreenTest extends TestCase
@@ -72,6 +73,14 @@ final class ShowScreenTest extends TestCase
 
         $this->assertSame('ViewUsers', $blueprint->screen('show')?->ability());
         $this->assertSame('User', $blueprint->screen('show')?->heading());
+    }
+
+    public function test_a_path_that_names_no_row_is_rejected_where_it_is_declared(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('must carry {id}');
+
+        ShowScreen::make('detail');
     }
 
     private function blueprint(): Blueprint

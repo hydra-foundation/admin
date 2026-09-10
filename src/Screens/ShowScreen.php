@@ -16,6 +16,8 @@ use Hydra\Admin\Contracts\ScreenInterface;
  */
 final class ShowScreen implements ScreenInterface
 {
+    use RowPath;
+
     private ?string $title = null;
     private ?string $ability = null;
 
@@ -24,7 +26,7 @@ final class ShowScreen implements ScreenInterface
     /** The detail screen for one row. The path must carry the id the source looks up. */
     public static function make(string $path = '{id}'): self
     {
-        return new self($path);
+        return new self(self::rowPath($path));
     }
 
     public function title(string $title): self

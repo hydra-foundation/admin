@@ -19,6 +19,8 @@ use Hydra\Admin\Input;
  */
 final class FormScreen implements ScreenInterface, SubmittableInterface
 {
+    use RowPath;
+
     private ?string $title = null;
     private ?string $ability = null;
 
@@ -41,7 +43,7 @@ final class FormScreen implements ScreenInterface, SubmittableInterface
     /** The edit form for one row. The path must carry the id the source looks up. */
     public static function edit(string $path = '{id}/edit'): self
     {
-        return new self('edit', $path, 'edit', 'update');
+        return new self('edit', self::rowPath($path), 'edit', 'update');
     }
 
     /** Whether this form writes a row that does not exist yet. */

@@ -98,6 +98,17 @@ final class FormScreenTest extends TestCase
         $this->assertCount(1, $blank['username']);
     }
 
+    public function test_an_edit_path_that_names_no_row_is_rejected_where_it_is_declared(): void
+    {
+        // create() is exempt: there is no row yet to name.
+        $this->assertSame('form', FormScreen::create('form')->path());
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('must carry {id}');
+
+        FormScreen::edit('form');
+    }
+
     public function test_a_form_screen_with_no_inputs_is_rejected(): void
     {
         $this->expectException(LogicException::class);
@@ -105,7 +116,7 @@ final class FormScreenTest extends TestCase
 
         Definition::make('users')
             ->source(new ArraySource)
-            ->fields(Field::text('username'))
+            ->fields(Field::id(), Field::text('username'))
             ->screens(FormScreen::edit())
             ->compile();
     }
