@@ -90,10 +90,45 @@ final class AdminController
         );
     }
 
+    public function create(Request $request): Response
+    {
+        [$blueprint, $screen] = $this->resolve($request);
+
+        if (!$screen instanceof FormScreen) {
+            throw new NotFoundException;
+        }
+
+        return $this->form($request, $blueprint, $screen, null, []);
+    }
+
+    public function store(Request $request): Response
+    {
+        [$blueprint, $screen] = $this->resolve($request);
+
+        if (!$screen instanceof FormScreen) {
+            throw new NotFoundException;
+        }
+
+        $submitted = $this->submitted($request, $screen);
+        $result = $this->validator->validate($submitted, $screen->rulesFor($submitted));
+
+        if ($result->fails()) {
+            return $this->form($request, $blueprint, $screen, null, $submitted, $result->errors(), Status::UnprocessableEntity);
+        }
+
+        try {
+            $this->registry->createSource($blueprint)->create($result->validated());
+        } catch (WriteRejected $rejected) {
+            return $this->form($request, $blueprint, $screen, null, $submitted, $rejected->errors(), Status::UnprocessableEntity);
+        }
+
+        return $this->done($request, $blueprint, 'Created');
+    }
+
     public function edit(Request $request): Response
     {
         [$blueprint, $screen, $id] = $this->resolveForm($request);
-        $row = $this->registry->formSource($blueprint)->find($id);
+        $row = $this->registry->updateSource($blueprint)->find($id);
 
         if ($row === null) {
             throw new NotFoundException;
@@ -105,7 +140,7 @@ final class AdminController
     public function update(Request $request): Response
     {
         [$blueprint, $screen, $id] = $this->resolveForm($request);
-        $source = $this->registry->formSource($blueprint);
+        $source = $this->registry->updateSource($blueprint);
 
         if ($source->find($id) === null) {
             throw new NotFoundException;
@@ -138,7 +173,7 @@ final class AdminController
      * into an HX-Redirect and reload the whole page, so an htmx client is handed
      * the list it was going to fetch anyway, with the URL pushed after it.
      */
-    private function done(Request $request, Blueprint $blueprint): Response
+    private function done(Request $request, Blueprint $blueprint, string $notice = 'Saved'): Response
     {
         $url = $this->registry->root($blueprint);
 
@@ -150,7 +185,7 @@ final class AdminController
 
         return (new HtmxResponse)
             ->pushUrl($url)
-            ->applyTo($this->table($request, $blueprint, $criteria, 'Saved'));
+            ->applyTo($this->table($request, $blueprint, $criteria, $notice));
     }
 
     private function table(Request $request, Blueprint $blueprint, Criteria $criteria, ?string $notice = null): Response
@@ -198,7 +233,7 @@ final class AdminController
         Request $request,
         Blueprint $blueprint,
         FormScreen $screen,
-        string $id,
+        ?string $id,
         array $values,
         array $errors = [],
         int|Status $status = Status::Ok,
@@ -206,7 +241,12 @@ final class AdminController
     ): Response {
         return $this->renderer->screen(
             $request,
-            $this->chrome->screen($blueprint, $screen->heading() ?? $blueprint->title, 'Edit ' . $id, $notice),
+            $this->chrome->screen(
+                $blueprint,
+                $screen->heading() ?? $blueprint->title,
+                $id === null ? 'New' : 'Edit ' . $id,
+                $notice,
+            ),
             'admin/partials/form',
             ['vm' => new FormViewModel($blueprint, $screen, $id, $this->registry->prefix(), $values, $errors)],
             status: $status,

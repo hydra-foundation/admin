@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Hydra\Admin\Tests\Unit;
 
+use Hydra\Admin\Contracts\CreateSourceInterface;
+use Hydra\Admin\Contracts\UpdateSourceInterface;
 use Hydra\Admin\Criteria;
 use Hydra\Admin\ModuleRegistry;
 use Hydra\Admin\Tests\Support\ArrayContainer;
-use Hydra\Admin\Tests\Support\ArrayFormSource;
+use Hydra\Admin\Tests\Support\ArrayWritableSource;
 use Hydra\Admin\Tests\Support\ArrayRowSource;
 use Hydra\Admin\Tests\Support\ArraySource;
 use Hydra\Admin\Tests\Support\EditableUsersModule;
@@ -73,7 +75,7 @@ final class ModuleRegistryTest extends TestCase
         $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/delete'));
     }
 
-    public function test_a_read_only_source_cannot_serve_a_form_screen(): void
+    public function test_a_read_only_source_cannot_serve_an_edit_screen(): void
     {
         $registry = $this->registry();
         $blueprint = $registry->find('users');
@@ -82,7 +84,7 @@ final class ModuleRegistryTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('must implement');
 
-        $registry->formSource($blueprint);
+        $registry->updateSource($blueprint);
     }
 
     public function test_a_source_that_reads_one_row_serves_a_show_screen_without_being_writable(): void
@@ -96,7 +98,24 @@ final class ModuleRegistryTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('must implement');
 
-        $registry->formSource($blueprint);
+        $registry->updateSource($blueprint);
+    }
+
+    public function test_a_source_that_updates_is_not_thereby_allowed_to_create(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->assertInstanceOf(UpdateSourceInterface::class, $registry->updateSource($blueprint));
+        $this->assertInstanceOf(CreateSourceInterface::class, $registry->createSource($blueprint));
+
+        $readOnly = $this->registry()->find('users');
+        $this->assertNotNull($readOnly);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('create screen');
+
+        $this->registry()->createSource($readOnly);
     }
 
     public function test_a_source_that_reads_only_pages_cannot_serve_a_screen_for_one_row(): void
@@ -127,7 +146,7 @@ final class ModuleRegistryTest extends TestCase
         return new ModuleRegistry(
             new ArrayContainer([
                 EditableUsersModule::class => new EditableUsersModule,
-                ArrayFormSource::class => new ArrayFormSource,
+                ArrayWritableSource::class => new ArrayWritableSource,
             ]),
             [EditableUsersModule::class],
         );

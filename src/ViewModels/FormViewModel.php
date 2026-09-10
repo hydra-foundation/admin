@@ -25,7 +25,7 @@ final readonly class FormViewModel
     public function __construct(
         public Blueprint $blueprint,
         public FormScreen $screen,
-        public string $id,
+        public ?string $id,
         public string $prefix,
         private array $values = [],
         private array $errors = [],
@@ -40,7 +40,16 @@ final readonly class FormViewModel
     public function action(): string
     {
         return rtrim($this->prefix, '/') . '/' . $this->blueprint->slug
-            . '/' . str_replace('{id}', rawurlencode($this->id), trim($this->screen->path(), '/'));
+            . '/' . str_replace('{id}', rawurlencode($this->id ?? ''), trim($this->screen->path(), '/'));
+    }
+
+    /**
+     * Apply saves and stays. A create form has nowhere to stay: the row it wrote
+     * has an id and lives at another URL, so it offers Save alone.
+     */
+    public function canApply(): bool
+    {
+        return $this->id !== null;
     }
 
     public function cancelUrl(): string

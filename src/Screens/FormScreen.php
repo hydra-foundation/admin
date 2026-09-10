@@ -12,10 +12,10 @@ use Hydra\Admin\Input;
 /**
  * Form screen
  *
- * A row, editable. Its controls are declared here rather than on the Definition
- * because create and edit are not the same form — a password is required on one
- * and optional on the other — and because an Input is not a display projection
- * of a Field.
+ * A row, writable: create() opens a blank one, edit() opens one that exists. Its
+ * controls are declared here rather than on the Definition because create and
+ * edit are not the same form — a password is required on one and optional on the
+ * other — and because an Input is not a display projection of a Field.
  */
 final class FormScreen implements ScreenInterface, SubmittableInterface
 {
@@ -29,12 +29,25 @@ final class FormScreen implements ScreenInterface, SubmittableInterface
         private readonly string $name,
         private readonly string $path,
         private readonly string $action,
+        private readonly string $submit,
     ) {}
+
+    /** The blank form. Its path names no row, because there is not one yet. */
+    public static function create(string $path = 'new'): self
+    {
+        return new self('create', $path, 'create', 'store');
+    }
 
     /** The edit form for one row. The path must carry the id the source looks up. */
     public static function edit(string $path = '{id}/edit'): self
     {
-        return new self('edit', $path, 'edit');
+        return new self('edit', $path, 'edit', 'update');
+    }
+
+    /** Whether this form writes a row that does not exist yet. */
+    public function isCreate(): bool
+    {
+        return $this->name === 'create';
     }
 
     public function inputs(Input ...$inputs): self
@@ -84,7 +97,7 @@ final class FormScreen implements ScreenInterface, SubmittableInterface
 
     public function submitHandler(): array
     {
-        return [AdminController::class, 'update'];
+        return [AdminController::class, $this->submit];
     }
 
     public function ability(): ?string

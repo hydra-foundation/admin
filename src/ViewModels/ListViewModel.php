@@ -85,6 +85,24 @@ final readonly class ListViewModel
         return $this->blueprint->screen('edit') instanceof FormScreen;
     }
 
+    /** Where a new row is written, or null when the module declares no create screen. */
+    public function createUrl(): ?string
+    {
+        $screen = $this->blueprint->screen('create');
+
+        return $screen instanceof FormScreen
+            ? $this->url() . '/' . trim($screen->path(), '/')
+            : null;
+    }
+
+    /** The create screen's own title, so the button says what it opens. */
+    public function createLabel(): string
+    {
+        $screen = $this->blueprint->screen('create');
+
+        return ($screen instanceof FormScreen ? $screen->heading() : null) ?? 'New';
+    }
+
     public function isViewable(): bool
     {
         return $this->blueprint->screen('show') instanceof ShowScreen;

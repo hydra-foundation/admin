@@ -16,7 +16,7 @@ final class EditableUsersModule implements ModuleInterface
     public function define(): Definition
     {
         return Definition::make('users')
-            ->source(ArrayFormSource::class)
+            ->source(ArrayWritableSource::class)
             ->fields(Field::id(), Field::text('username')->sortable())
             ->screens(
                 PageScreen::make('new', 'admin/new')->at('new'),

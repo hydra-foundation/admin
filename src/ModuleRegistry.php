@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Hydra\Admin;
 
-use Hydra\Admin\Contracts\FormSourceInterface;
+use Hydra\Admin\Contracts\CreateSourceInterface;
 use Hydra\Admin\Contracts\ModuleInterface;
 use Hydra\Admin\Contracts\PresenterInterface;
 use Hydra\Admin\Contracts\RowSourceInterface;
+use Hydra\Admin\Contracts\UpdateSourceInterface;
 use Hydra\Admin\Contracts\ScreenInterface;
 use Hydra\Admin\Contracts\SourceInterface;
 use Hydra\Admin\Screens\PageScreen;
@@ -166,15 +167,30 @@ final class ModuleRegistry
         return $presenter->present();
     }
 
-    public function formSource(Blueprint $blueprint): FormSourceInterface
+    public function updateSource(Blueprint $blueprint): UpdateSourceInterface
     {
         $source = $this->sourceFor($blueprint);
 
-        if (!$source instanceof FormSourceInterface) {
+        if (!$source instanceof UpdateSourceInterface) {
             throw new RuntimeException(sprintf(
-                'Admin module "%s" has a form screen, so its source must implement %s.',
+                'Admin module "%s" has an edit screen, so its source must implement %s.',
                 $blueprint->slug,
-                FormSourceInterface::class,
+                UpdateSourceInterface::class,
+            ));
+        }
+
+        return $source;
+    }
+
+    public function createSource(Blueprint $blueprint): CreateSourceInterface
+    {
+        $source = $this->sourceFor($blueprint);
+
+        if (!$source instanceof CreateSourceInterface) {
+            throw new RuntimeException(sprintf(
+                'Admin module "%s" has a create screen, so its source must implement %s.',
+                $blueprint->slug,
+                CreateSourceInterface::class,
             ));
         }
 

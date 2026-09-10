@@ -10,6 +10,7 @@ use Hydra\Admin\Field;
 use Hydra\Admin\Input;
 use Hydra\Admin\ModuleScanner;
 use Hydra\Admin\Screens\FormScreen;
+use Hydra\Admin\Screens\ShowScreen;
 use Hydra\Admin\Tests\Support\ArraySource;
 use Hydra\Validation\Rules\MinLength;
 use LogicException;
@@ -39,6 +40,47 @@ final class FormScreenTest extends TestCase
         $this->assertSame('users.edit', $routes[1]['name']);
         $this->assertSame('users.edit.submit', $routes[2]['name']);
         $this->assertSame([AdminController::class, 'update'], $routes[2]['handler']);
+    }
+
+    public function test_a_create_screen_names_no_row_and_stores_instead_of_updating(): void
+    {
+        $screen = FormScreen::create()->inputs(Input::text('username'));
+
+        $this->assertSame('create', $screen->name());
+        $this->assertSame('new', $screen->path());
+        $this->assertTrue($screen->isCreate());
+        $this->assertFalse(FormScreen::edit()->isCreate());
+        $this->assertSame([AdminController::class, 'create'], $screen->handler());
+        $this->assertSame([AdminController::class, 'store'], $screen->submitHandler());
+    }
+
+    public function test_a_literal_create_path_is_registered_ahead_of_the_id_that_would_swallow_it(): void
+    {
+        $blueprint = Definition::make('users')
+            ->source(new ArraySource)
+            ->fields(Field::id())
+            ->screens(
+                ShowScreen::make(),
+                FormScreen::edit()->inputs(Input::text('username')),
+                FormScreen::create()->inputs(Input::text('username')),
+            )
+            ->compile();
+
+        $paths = array_column((new ModuleScanner)->scan([$blueprint], '/admin'), 'path');
+
+        $this->assertLessThan(
+            array_search('/admin/users/{id}', $paths, true),
+            array_search('/admin/users/new', $paths, true),
+        );
+    }
+
+    public function test_the_two_forms_can_differ_on_the_same_column(): void
+    {
+        $create = FormScreen::create()->inputs(Input::password('password')->required());
+        $edit = FormScreen::edit()->inputs(Input::password('password'));
+
+        $this->assertCount(1, $create->rulesFor(['password' => ''])['password']);
+        $this->assertSame([], $edit->rulesFor(['password' => ''])['password']);
     }
 
     public function test_the_rule_set_is_built_against_the_submission(): void

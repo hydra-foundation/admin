@@ -28,6 +28,21 @@ final class FormViewModelTest extends TestCase
         $this->assertSame('/admin/users/a%2Fb/edit', $this->viewModel('a/b')->action());
     }
 
+    public function test_a_create_form_posts_to_a_url_that_names_no_row(): void
+    {
+        $vm = new FormViewModel(
+            $this->blueprint(),
+            FormScreen::create()->inputs(Input::text('username')),
+            null,
+            '/admin',
+        );
+
+        $this->assertSame('/admin/users/new', $vm->action());
+        $this->assertSame('/admin/users', $vm->cancelUrl());
+        $this->assertFalse($vm->canApply());
+        $this->assertTrue($this->viewModel('42')->canApply());
+    }
+
     public function test_it_fills_controls_from_the_values_it_was_given(): void
     {
         $vm = $this->viewModel('42', ['username' => 'ada', 'password' => 'hunter2']);
