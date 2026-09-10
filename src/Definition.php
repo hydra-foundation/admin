@@ -6,6 +6,7 @@ namespace Hydra\Admin;
 
 use Hydra\Admin\Contracts\ScreenInterface;
 use Hydra\Admin\Contracts\SourceInterface;
+use Hydra\Admin\Screens\FormScreen;
 use Hydra\Admin\Screens\ListScreen;
 use Hydra\Admin\Sources\CallableSource;
 use LogicException;
@@ -134,6 +135,12 @@ final class Definition
         $seen = [];
 
         foreach ($screens as $screen) {
+            if ($screen instanceof FormScreen && $screen->controls() === []) {
+                throw new LogicException(
+                    "Admin module \"{$this->slug}\" declares a form screen \"{$screen->name()}\" with no inputs."
+                );
+            }
+
             $route = $screen->method() . ' ' . trim($screen->path(), '/');
 
             if (isset($seen[$route])) {

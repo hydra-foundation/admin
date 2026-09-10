@@ -33,11 +33,17 @@ final class Navigation
                 'slug' => $blueprint->slug,
                 'title' => $blueprint->title,
                 'icon' => $blueprint->icon,
-                'url' => rtrim($this->registry->prefix(), '/') . '/' . $blueprint->slug,
+                'url' => $this->registry->root($blueprint),
                 'active' => $blueprint->slug === $current,
             ];
         }
 
         return $items;
+    }
+
+    /** Where the admin root lands: the first module this visitor may reach. */
+    public function home(): string
+    {
+        return $this->items()[0]['url'] ?? rtrim($this->registry->prefix(), '/');
     }
 }

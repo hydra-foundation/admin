@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hydra\Admin;
 
+use Hydra\Admin\Contracts\SubmittableInterface;
+
 /**
  * Module scanner
  *
@@ -23,13 +25,26 @@ final class ModuleScanner
 
         foreach ($blueprints as $blueprint) {
             foreach ($blueprint->screens as $screen) {
+                $path = $this->path($prefix, $blueprint->slug, $screen->path());
+                $name = $blueprint->slug . '.' . $screen->name();
+
                 $routes[] = [
                     'method' => $screen->method(),
-                    'path' => $this->path($prefix, $blueprint->slug, $screen->path()),
+                    'path' => $path,
                     'handler' => $screen->handler(),
                     'middleware' => $middleware,
-                    'name' => $blueprint->slug . '.' . $screen->name(),
+                    'name' => $name,
                 ];
+
+                if ($screen instanceof SubmittableInterface) {
+                    $routes[] = [
+                        'method' => 'POST',
+                        'path' => $path,
+                        'handler' => $screen->submitHandler(),
+                        'middleware' => $middleware,
+                        'name' => $name . '.submit',
+                    ];
+                }
             }
         }
 

@@ -7,6 +7,8 @@ namespace Hydra\Admin\ViewModels;
 use Hydra\Admin\Blueprint;
 use Hydra\Admin\Field;
 use Hydra\Admin\Page;
+use Hydra\Admin\Screens\FormScreen;
+use Hydra\Admin\Screens\ShowScreen;
 use Hydra\Admin\Surface;
 use Hydra\View\HtmlView;
 
@@ -57,6 +59,43 @@ final readonly class ListViewModel
         return $this->page->criteria->search ?? '';
     }
 
+    /**
+     * Where this row is edited, or null when the module declares no edit screen
+     * or nothing that identifies a row.
+     *
+     * @param array<string, mixed> $row
+     */
+    public function editUrl(array $row): ?string
+    {
+        return $this->isEditable() ? $this->rowUrl('edit', $row) : null;
+    }
+
+    /**
+     * Where this row is read on its own, or null on the same terms.
+     *
+     * @param array<string, mixed> $row
+     */
+    public function showUrl(array $row): ?string
+    {
+        return $this->isViewable() ? $this->rowUrl('show', $row) : null;
+    }
+
+    public function isEditable(): bool
+    {
+        return $this->blueprint->screen('edit') instanceof FormScreen;
+    }
+
+    public function isViewable(): bool
+    {
+        return $this->blueprint->screen('show') instanceof ShowScreen;
+    }
+
+    /** Whether any row action needs a column of its own. */
+    public function hasRowActions(): bool
+    {
+        return $this->isEditable() || $this->isViewable();
+    }
+
     /** @param array<string, mixed> $row */
     public function cell(Field $field, array $row): string|HtmlView
     {
@@ -92,6 +131,25 @@ final readonly class ListViewModel
         $current = $this->page->criteria->page;
 
         return range(max(1, min($current - $radius, $last - $radius * 2)), min($last, max($current + $radius, $radius * 2 + 1)));
+    }
+
+    /**
+     * A named screen's path with this row's id in it, or null when nothing in
+     * the row identifies it.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function rowUrl(string $screen, array $row): ?string
+    {
+        $key = $this->blueprint->identifier();
+        $id = $key === null ? null : ($row[$key] ?? null);
+        $path = $this->blueprint->screen($screen)?->path();
+
+        if (!is_scalar($id) || $path === null) {
+            return null;
+        }
+
+        return $this->url() . '/' . str_replace('{id}', rawurlencode((string) $id), trim($path, '/'));
     }
 
     /** @param array<string, string|null> $overrides */

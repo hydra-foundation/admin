@@ -7,9 +7,10 @@ namespace Hydra\Admin\ViewModels;
 /**
  * Screen view model
  *
- * The chrome around any admin screen: sidebar, breadcrumbs, title. It knows
- * nothing about tables or forms, so a plain controller action can render inside
- * the admin layout without pretending to be a module.
+ * The chrome around any admin screen: sidebar, breadcrumbs, title, and the
+ * notice a write leaves behind. It knows nothing about tables or forms, so a
+ * plain controller action can render inside the admin layout without pretending
+ * to be a module.
  */
 final readonly class ScreenViewModel
 {
@@ -21,5 +22,6 @@ final readonly class ScreenViewModel
         public string $title,
         public array $navigation,
         public array $breadcrumbs,
+        public ?string $notice = null,
     ) {}
 }

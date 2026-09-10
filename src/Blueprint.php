@@ -59,6 +59,18 @@ final readonly class Blueprint
         return $this->where(static fn (Field $field): bool => $field->isFilterable());
     }
 
+    /** The column that names a row, from the first Field::id() declared. */
+    public function identifier(): ?string
+    {
+        foreach ($this->fields as $field) {
+            if ($field->type() === FieldType::Id) {
+                return $field->name();
+            }
+        }
+
+        return null;
+    }
+
     public function screen(string $name): ?ScreenInterface
     {
         foreach ($this->screens as $screen) {

@@ -5,11 +5,22 @@ declare(strict_types=1);
 namespace Hydra\Admin;
 
 use Hydra\Admin\Contracts\ScreenInterface;
+use Hydra\Admin\Exceptions\WriteRejected;
+use Hydra\Admin\Screens\FormScreen;
 use Hydra\Admin\Screens\PageScreen;
+use Hydra\Admin\Screens\ShowScreen;
+use Hydra\Admin\ViewModels\FormViewModel;
 use Hydra\Admin\ViewModels\ListViewModel;
+use Hydra\Admin\ViewModels\ShowViewModel;
 use Hydra\Authorization\Contracts\GateInterface;
 use Hydra\Http\Exceptions\NotFoundException;
+use Hydra\Http\Htmx;
+use Hydra\Http\HtmxResponse;
+use Hydra\Http\Input as SubmittedInput;
 use Hydra\Http\Query;
+use Hydra\Http\Responder;
+use Hydra\Http\Status;
+use Hydra\Validation\Validator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -26,16 +37,127 @@ final class AdminController
         private readonly Chrome $chrome,
         private readonly Renderer $renderer,
         private readonly GateInterface $gate,
+        private readonly Responder $respond,
+        private readonly Validator $validator,
     ) {}
 
     public function list(Request $request): Response
     {
         [$blueprint] = $this->resolve($request);
-        $criteria = Criteria::fromQuery(Query::fromRequest($request), $blueprint);
+
+        return $this->table($request, $blueprint, Criteria::fromQuery(Query::fromRequest($request), $blueprint));
+    }
+
+    public function page(Request $request): Response
+    {
+        [$blueprint, $screen] = $this->resolve($request);
+
+        if (!$screen instanceof PageScreen) {
+            throw new NotFoundException;
+        }
+
+        $heading = $screen->heading();
 
         return $this->renderer->screen(
             $request,
-            $this->chrome->module($blueprint),
+            trim($screen->path(), '/') === ''
+                ? $this->chrome->module($blueprint, $heading)
+                : $this->chrome->screen($blueprint, $heading ?? $blueprint->title),
+            $screen->template(),
+            $this->registry->present($screen),
+        );
+    }
+
+    public function show(Request $request): Response
+    {
+        [$blueprint, $screen, $id] = $this->resolveRow($request);
+
+        if (!$screen instanceof ShowScreen) {
+            throw new NotFoundException;
+        }
+
+        $row = $this->registry->rowSource($blueprint)->find($id);
+
+        if ($row === null) {
+            throw new NotFoundException;
+        }
+
+        return $this->renderer->screen(
+            $request,
+            $this->chrome->screen($blueprint, $screen->heading() ?? $blueprint->title, $id),
+            'admin/partials/show',
+            ['vm' => new ShowViewModel($blueprint, $id, $this->registry->prefix(), $row)],
+        );
+    }
+
+    public function edit(Request $request): Response
+    {
+        [$blueprint, $screen, $id] = $this->resolveForm($request);
+        $row = $this->registry->formSource($blueprint)->find($id);
+
+        if ($row === null) {
+            throw new NotFoundException;
+        }
+
+        return $this->form($request, $blueprint, $screen, $id, $row);
+    }
+
+    public function update(Request $request): Response
+    {
+        [$blueprint, $screen, $id] = $this->resolveForm($request);
+        $source = $this->registry->formSource($blueprint);
+
+        if ($source->find($id) === null) {
+            throw new NotFoundException;
+        }
+
+        $submitted = $this->submitted($request, $screen);
+        $result = $this->validator->validate($submitted, $screen->rulesFor($submitted));
+
+        if ($result->fails()) {
+            return $this->form($request, $blueprint, $screen, $id, $submitted, $result->errors(), Status::UnprocessableEntity);
+        }
+
+        try {
+            $source->update($id, $result->validated());
+        } catch (WriteRejected $rejected) {
+            return $this->form($request, $blueprint, $screen, $id, $submitted, $rejected->errors(), Status::UnprocessableEntity);
+        }
+
+        $saved = $source->find($id) ?? $submitted;
+
+        if (SubmittedInput::fromRequest($request)->string('_action') === 'apply') {
+            return $this->form($request, $blueprint, $screen, $id, $saved, notice: 'Saved');
+        }
+
+        return $this->done($request, $blueprint);
+    }
+
+    /**
+     * Back to the list once a save is finished. A plain redirect would be turned
+     * into an HX-Redirect and reload the whole page, so an htmx client is handed
+     * the list it was going to fetch anyway, with the URL pushed after it.
+     */
+    private function done(Request $request, Blueprint $blueprint): Response
+    {
+        $url = $this->registry->root($blueprint);
+
+        if (!Htmx::fromRequest($request)->isHtmx()) {
+            return $this->respond->redirect($url);
+        }
+
+        $criteria = new Criteria(perPage: $blueprint->perPage, sort: $blueprint->defaultSort, direction: $blueprint->defaultDirection);
+
+        return (new HtmxResponse)
+            ->pushUrl($url)
+            ->applyTo($this->table($request, $blueprint, $criteria, 'Saved'));
+    }
+
+    private function table(Request $request, Blueprint $blueprint, Criteria $criteria, ?string $notice = null): Response
+    {
+        return $this->renderer->screen(
+            $request,
+            $this->chrome->module($blueprint, notice: $notice),
             'admin/partials/table',
             [
                 'vm' => new ListViewModel(
@@ -48,20 +170,72 @@ final class AdminController
         );
     }
 
-    public function page(Request $request): Response
+    /**
+     * Only the declared controls are read off the request, so a hand-crafted
+     * POST cannot introduce a column the screen never offered.
+     *
+     * @return array<string, string>
+     */
+    private function submitted(Request $request, FormScreen $screen): array
     {
-        [$blueprint, $screen] = $this->resolve($request);
+        $input = SubmittedInput::fromRequest($request);
+        $values = [];
 
-        if (!$screen instanceof PageScreen) {
+        foreach ($screen->controls() as $control) {
+            if (!$control->isReadonly()) {
+                $values[$control->name()] = trim($input->string($control->name()));
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param array<string, mixed>  $values
+     * @param array<string, string> $errors
+     */
+    private function form(
+        Request $request,
+        Blueprint $blueprint,
+        FormScreen $screen,
+        string $id,
+        array $values,
+        array $errors = [],
+        int|Status $status = Status::Ok,
+        ?string $notice = null,
+    ): Response {
+        return $this->renderer->screen(
+            $request,
+            $this->chrome->screen($blueprint, $screen->heading() ?? $blueprint->title, 'Edit ' . $id, $notice),
+            'admin/partials/form',
+            ['vm' => new FormViewModel($blueprint, $screen, $id, $this->registry->prefix(), $values, $errors)],
+            status: $status,
+        );
+    }
+
+    /** @return array{0: Blueprint, 1: FormScreen, 2: string} */
+    private function resolveForm(Request $request): array
+    {
+        [$blueprint, $screen, $id] = $this->resolveRow($request);
+
+        if (!$screen instanceof FormScreen) {
             throw new NotFoundException;
         }
 
-        return $this->renderer->screen(
-            $request,
-            $this->chrome->module($blueprint, $screen->heading()),
-            $screen->template(),
-            $this->registry->present($screen),
-        );
+        return [$blueprint, $screen, $id];
+    }
+
+    /** A screen that names one row, and the id its path carried. @return array{0: Blueprint, 1: ScreenInterface, 2: string} */
+    private function resolveRow(Request $request): array
+    {
+        [$blueprint, $screen] = $this->resolve($request);
+        $id = $request->getAttribute('id');
+
+        if (!is_string($id) || $id === '') {
+            throw new NotFoundException;
+        }
+
+        return [$blueprint, $screen, $id];
     }
 
     /** @return array{0: Blueprint, 1: ScreenInterface} */

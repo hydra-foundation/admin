@@ -52,11 +52,21 @@ final class AdminRoutesCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** @param array<string, Blueprint> $blueprints */
+    /**
+     * The route name is "slug.screen", plus ".submit" on the POST a submittable
+     * screen adds — which answers at the same screen, so it answers to the same
+     * ability.
+     *
+     * @param array<string, Blueprint> $blueprints
+     */
     private function ability(array $blueprints, string $name): ?string
     {
         [$slug, $screen] = explode('.', $name, 2);
         $blueprint = $blueprints[$slug];
+
+        if (str_ends_with($screen, '.submit')) {
+            $screen = substr($screen, 0, -strlen('.submit'));
+        }
 
         return $blueprint->screen($screen)?->ability() ?? $blueprint->ability;
     }

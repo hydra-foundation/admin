@@ -7,8 +7,13 @@ namespace Hydra\Admin\Tests\Unit;
 use Hydra\Admin\Criteria;
 use Hydra\Admin\ModuleRegistry;
 use Hydra\Admin\Tests\Support\ArrayContainer;
+use Hydra\Admin\Tests\Support\ArrayFormSource;
+use Hydra\Admin\Tests\Support\ArrayRowSource;
 use Hydra\Admin\Tests\Support\ArraySource;
+use Hydra\Admin\Tests\Support\EditableUsersModule;
+use RuntimeException;
 use Hydra\Admin\Tests\Support\UsersModule;
+use Hydra\Admin\Tests\Support\ViewableUsersModule;
 use PHPUnit\Framework\TestCase;
 
 final class ModuleRegistryTest extends TestCase
@@ -37,6 +42,95 @@ final class ModuleRegistryTest extends TestCase
 
         $this->assertNotNull($blueprint);
         $this->assertSame(2, $registry->source($blueprint)->page(new Criteria)->total);
+    }
+
+    public function test_a_placeholder_screen_resolves_a_concrete_path(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->assertSame('edit', $registry->screenAt($blueprint, '/admin/users/42/edit')?->name());
+        $this->assertSame('list', $registry->screenAt($blueprint, '/admin/users')?->name());
+    }
+
+    public function test_a_literal_path_wins_over_a_placeholder(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->assertSame('new', $registry->screenAt($blueprint, '/admin/users/new')?->name());
+    }
+
+    public function test_a_path_that_matches_no_screen_stays_unresolved(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/edit/extra'));
+        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/delete'));
+    }
+
+    public function test_a_read_only_source_cannot_serve_a_form_screen(): void
+    {
+        $registry = $this->registry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('must implement');
+
+        $registry->formSource($blueprint);
+    }
+
+    public function test_a_source_that_reads_one_row_serves_a_show_screen_without_being_writable(): void
+    {
+        $registry = $this->viewableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->assertSame('ada', $registry->rowSource($blueprint)->find('1')['username'] ?? null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('must implement');
+
+        $registry->formSource($blueprint);
+    }
+
+    public function test_a_source_that_reads_only_pages_cannot_serve_a_screen_for_one_row(): void
+    {
+        $registry = $this->registry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('screen for one row');
+
+        $registry->rowSource($blueprint);
+    }
+
+    private function viewableRegistry(): ModuleRegistry
+    {
+        return new ModuleRegistry(
+            new ArrayContainer([
+                ViewableUsersModule::class => new ViewableUsersModule,
+                ArrayRowSource::class => new ArrayRowSource,
+            ]),
+            [ViewableUsersModule::class],
+        );
+    }
+
+    private function editableRegistry(): ModuleRegistry
+    {
+        return new ModuleRegistry(
+            new ArrayContainer([
+                EditableUsersModule::class => new EditableUsersModule,
+                ArrayFormSource::class => new ArrayFormSource,
+            ]),
+            [EditableUsersModule::class],
+        );
     }
 
     private function registry(): ModuleRegistry

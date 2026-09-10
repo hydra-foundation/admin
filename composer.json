@@ -14,14 +14,69 @@
         }
     },
     "repositories": [
-        { "type": "path", "url": "../core", "options": { "symlink": true } },
-        { "type": "path", "url": "../http", "options": { "symlink": true } },
-        { "type": "path", "url": "../view", "options": { "symlink": true } },
-        { "type": "path", "url": "../auth", "options": { "symlink": true } },
-        { "type": "path", "url": "../authorization", "options": { "symlink": true } },
-        { "type": "path", "url": "../session", "options": { "symlink": true } },
-        { "type": "path", "url": "../csrf", "options": { "symlink": true } },
-        { "type": "path", "url": "../event", "options": { "symlink": true } }
+        {
+            "type": "path",
+            "url": "../core",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../http",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../view",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../auth",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../authorization",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../session",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../csrf",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../event",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../validation",
+            "options": {
+                "symlink": true
+            }
+        }
     ],
     "authors": [
         {
@@ -33,6 +88,7 @@
         "php": ">=8.2",
         "hydrakit/core": "^0.2",
         "hydrakit/http": "^0.2",
+        "hydrakit/validation": "^0.2",
         "hydrakit/view": "^0.2",
         "hydrakit/authorization": "^0.2",
         "psr/http-message": "^2.0",
