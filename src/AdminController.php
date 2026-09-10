@@ -45,8 +45,9 @@ final class AdminController
     public function list(Request $request): Response
     {
         [$blueprint] = $this->resolve($request);
+        $criteria = Criteria::fromQuery(Query::fromRequest($request), $blueprint);
 
-        return $this->table($request, $blueprint, Criteria::fromQuery(Query::fromRequest($request), $blueprint));
+        return $this->table($request, $blueprint, $this->registry->source($blueprint)->page($criteria));
     }
 
     public function page(Request $request): Response
@@ -196,11 +197,12 @@ final class AdminController
     }
 
     /**
-     * Back to the list once a write is finished. A plain redirect would be turned
-     * into an HX-Redirect and reload the whole page, so an htmx client is handed
-     * the list it was going to fetch anyway, with the URL pushed after it. A
-     * refusal is rendered rather than redirected, because a redirect would throw
-     * away the only account of why the row is still there.
+     * Back to the list once a write is finished — the same view of it the write
+     * was made from, not the first page of an unfiltered table. A plain redirect
+     * would be turned into an HX-Redirect and reload the whole page, so an htmx
+     * client is handed the list it was going to fetch anyway, with the URL pushed
+     * after it. A refusal is rendered rather than redirected, because a redirect
+     * would throw away the only account of why the row is still there.
      */
     private function done(
         Request $request,
@@ -208,23 +210,68 @@ final class AdminController
         ?Notice $notice = null,
         Status $status = Status::Ok,
     ): Response {
-        $url = $this->registry->root($blueprint);
+        $criteria = $this->listState($request, $blueprint);
 
         if (!Htmx::fromRequest($request)->isHtmx() && $status === Status::Ok) {
-            return $this->respond->redirect($url);
+            return $this->respond->redirect($this->listUrl($blueprint, $criteria));
         }
 
-        $criteria = new Criteria(perPage: $blueprint->perPage, sort: $blueprint->defaultSort, direction: $blueprint->defaultDirection);
+        $page = $this->rows($blueprint, $criteria);
 
         return (new HtmxResponse)
-            ->pushUrl($url)
-            ->applyTo($this->table($request, $blueprint, $criteria, $notice, $status));
+            ->pushUrl($this->listUrl($blueprint, $page->criteria))
+            ->applyTo($this->table($request, $blueprint, $page, $notice, $status));
+    }
+
+    /**
+     * The list the write was made from. htmx reports the page the browser is on,
+     * which is where the criteria live; a write sent without it — a form posted
+     * with no htmx — has only its own URL to go on, and lands on the defaults.
+     */
+    private function listState(Request $request, Blueprint $blueprint): Criteria
+    {
+        $current = Htmx::fromRequest($request)->currentUrl();
+
+        return $current === null
+            ? Criteria::defaults($blueprint)
+            : Criteria::fromQuery(Query::fromUrl($current), $blueprint);
+    }
+
+    /**
+     * The rows for this view of the list. A delete can empty the page it was on —
+     * the last row of the last page — and an empty page is not what the visitor
+     * asked to be shown, so the list falls back to its new end.
+     */
+    private function rows(Blueprint $blueprint, Criteria $criteria): Page
+    {
+        $source = $this->registry->source($blueprint);
+        $page = $source->page($criteria);
+
+        if ($page->isEmpty() && $criteria->page > 1) {
+            return $source->page($criteria->onPage($page->pages()));
+        }
+
+        return $page;
+    }
+
+    /**
+     * Where this view of the list lives. The default view is what the bare module
+     * URL already shows, so it is not spelled out again in the query string.
+     */
+    private function listUrl(Blueprint $blueprint, Criteria $criteria): string
+    {
+        $root = $this->registry->root($blueprint);
+        $query = $criteria->toQuery();
+
+        return $query === Criteria::defaults($blueprint)->toQuery()
+            ? $root
+            : $root . '?' . http_build_query($query);
     }
 
     private function table(
         Request $request,
         Blueprint $blueprint,
-        Criteria $criteria,
+        Page $page,
         ?Notice $notice = null,
         int|Status $status = Status::Ok,
     ): Response {
@@ -232,13 +279,7 @@ final class AdminController
             $request,
             $this->chrome->module($blueprint, notice: $notice),
             'admin/partials/table',
-            [
-                'vm' => new ListViewModel(
-                    $blueprint,
-                    $this->registry->source($blueprint)->page($criteria),
-                    $this->registry->prefix(),
-                ),
-            ],
+            ['vm' => new ListViewModel($blueprint, $page, $this->registry->prefix())],
             toolbar: 'admin/partials/filters',
             status: $status,
         );
@@ -322,7 +363,9 @@ final class AdminController
     {
         $path = $request->getUri()->getPath();
         $blueprint = $this->registry->fromPath($path);
-        $screen = $blueprint === null ? null : $this->registry->screenAt($blueprint, $path);
+        $screen = $blueprint === null
+            ? null
+            : $this->registry->screenAt($blueprint, $path, $request->getMethod());
 
         if ($blueprint === null || $screen === null) {
             throw new NotFoundException;

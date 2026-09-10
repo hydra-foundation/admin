@@ -42,6 +42,16 @@ final readonly class Criteria
         $this->search = $search;
     }
 
+    /** The view of a list nobody has asked anything of: the module's own defaults. */
+    public static function defaults(Blueprint $blueprint): self
+    {
+        return new self(
+            perPage: $blueprint->perPage,
+            sort: $blueprint->defaultSort,
+            direction: $blueprint->defaultDirection,
+        );
+    }
+
     public static function fromQuery(Query $query, Blueprint $blueprint): self
     {
         $sortable = array_map(static fn (Field $field): string => $field->name(), $blueprint->sortable());
@@ -69,6 +79,19 @@ final readonly class Criteria
             direction: in_array($direction, ['asc', 'desc'], true) ? $direction : $blueprint->defaultDirection,
             filters: $filters,
             search: $search === '' ? null : $search,
+        );
+    }
+
+    /** The same list, at another page. */
+    public function onPage(int $page): self
+    {
+        return new self(
+            page: $page,
+            perPage: $this->perPage,
+            sort: $this->sort,
+            direction: $this->direction,
+            filters: $this->filters,
+            search: $this->search,
         );
     }
 

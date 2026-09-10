@@ -64,7 +64,7 @@ final class DeleteScreenTest extends TestCase
 
         $this->assertSame(
             'delete',
-            $registry->screenAt($this->blueprint(), '/admin/users/42/delete')?->name(),
+            $registry->screenAt($this->blueprint(), '/admin/users/42/delete', 'POST')?->name(),
         );
     }
 

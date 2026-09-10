@@ -7,7 +7,11 @@ namespace Hydra\Admin\Tests\Unit;
 use Hydra\Admin\Contracts\CreateSourceInterface;
 use Hydra\Admin\Contracts\UpdateSourceInterface;
 use Hydra\Admin\Criteria;
+use Hydra\Admin\Definition;
+use Hydra\Admin\Field;
 use Hydra\Admin\ModuleRegistry;
+use Hydra\Admin\Screens\DeleteScreen;
+use Hydra\Admin\Screens\ShowScreen;
 use Hydra\Admin\Tests\Support\ArrayContainer;
 use Hydra\Admin\Tests\Support\ArrayWritableSource;
 use Hydra\Admin\Tests\Support\ArrayRowSource;
@@ -52,8 +56,8 @@ final class ModuleRegistryTest extends TestCase
         $blueprint = $registry->find('users');
 
         $this->assertNotNull($blueprint);
-        $this->assertSame('edit', $registry->screenAt($blueprint, '/admin/users/42/edit')?->name());
-        $this->assertSame('list', $registry->screenAt($blueprint, '/admin/users')?->name());
+        $this->assertSame('edit', $registry->screenAt($blueprint, '/admin/users/42/edit', 'GET')?->name());
+        $this->assertSame('list', $registry->screenAt($blueprint, '/admin/users', 'GET')?->name());
     }
 
     public function test_a_literal_path_wins_over_a_placeholder(): void
@@ -62,7 +66,42 @@ final class ModuleRegistryTest extends TestCase
         $blueprint = $registry->find('users');
 
         $this->assertNotNull($blueprint);
-        $this->assertSame('new', $registry->screenAt($blueprint, '/admin/users/new')?->name());
+        $this->assertSame('new', $registry->screenAt($blueprint, '/admin/users/new', 'GET')?->name());
+    }
+
+    public function test_two_screens_may_share_a_path_under_different_methods(): void
+    {
+        $blueprint = Definition::make('users')
+            ->source(new ArraySource)
+            ->fields(Field::id())
+            ->screens(ShowScreen::make(), DeleteScreen::make('{id}'))
+            ->compile();
+
+        $registry = new ModuleRegistry(new ArrayContainer([]), []);
+
+        $this->assertSame('show', $registry->screenAt($blueprint, '/admin/users/42', 'GET')?->name());
+        $this->assertSame('delete', $registry->screenAt($blueprint, '/admin/users/42', 'POST')?->name());
+    }
+
+    public function test_a_submittable_screen_answers_the_post_beside_it(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        // The edit screen is a GET, and the POST the scanner emits at the same
+        // path is still the edit screen.
+        $this->assertSame('edit', $registry->screenAt($blueprint, '/admin/users/42/edit', 'POST')?->name());
+    }
+
+    public function test_a_screen_does_not_answer_a_method_it_never_declared(): void
+    {
+        $registry = $this->editableRegistry();
+        $blueprint = $registry->find('users');
+
+        $this->assertNotNull($blueprint);
+        $this->assertNull($registry->screenAt($blueprint, '/admin/users', 'POST'));
+        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/edit', 'DELETE'));
     }
 
     public function test_a_path_that_matches_no_screen_stays_unresolved(): void
@@ -71,8 +110,8 @@ final class ModuleRegistryTest extends TestCase
         $blueprint = $registry->find('users');
 
         $this->assertNotNull($blueprint);
-        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/edit/extra'));
-        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/delete'));
+        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/edit/extra', 'GET'));
+        $this->assertNull($registry->screenAt($blueprint, '/admin/users/42/delete', 'POST'));
     }
 
     public function test_a_read_only_source_cannot_serve_an_edit_screen(): void

@@ -57,8 +57,8 @@ final class ShowScreenTest extends TestCase
 
         $registry = new ModuleRegistry(new ArrayContainer([]), []);
 
-        $this->assertSame('new', $registry->screenAt($blueprint, '/admin/users/new')?->name());
-        $this->assertSame('show', $registry->screenAt($blueprint, '/admin/users/42')?->name());
+        $this->assertSame('new', $registry->screenAt($blueprint, '/admin/users/new', 'GET')?->name());
+        $this->assertSame('show', $registry->screenAt($blueprint, '/admin/users/42', 'GET')?->name());
     }
 
     public function test_a_screen_ability_overrides_the_modules(): void

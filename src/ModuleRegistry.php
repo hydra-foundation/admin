@@ -9,9 +9,10 @@ use Hydra\Admin\Contracts\DeleteSourceInterface;
 use Hydra\Admin\Contracts\ModuleInterface;
 use Hydra\Admin\Contracts\PresenterInterface;
 use Hydra\Admin\Contracts\RowSourceInterface;
-use Hydra\Admin\Contracts\UpdateSourceInterface;
 use Hydra\Admin\Contracts\ScreenInterface;
 use Hydra\Admin\Contracts\SourceInterface;
+use Hydra\Admin\Contracts\SubmittableInterface;
+use Hydra\Admin\Contracts\UpdateSourceInterface;
 use Hydra\Admin\Screens\PageScreen;
 use Hydra\Core\Contracts\ContainerInterface;
 use LogicException;
@@ -97,28 +98,49 @@ final class ModuleRegistry
     }
 
     /**
-     * The screen a request path resolves to inside its module, or null. A literal
-     * path wins over one with a {placeholder}, so a screen at "new" is still
-     * reachable when a sibling sits at "{id}".
+     * The screen a request resolves to inside its module, or null. A literal path
+     * wins over one with a {placeholder}, so a screen at "new" is still reachable
+     * when a sibling sits at "{id}".
+     *
+     * The method is part of the question, not decoration: two screens may share a
+     * path under different verbs — a row that is read with GET and removed with
+     * POST — and compile() allows exactly that. Matching on the path alone would
+     * hand the POST to the screen that answers the GET.
      */
-    public function screenAt(Blueprint $blueprint, string $path): ?ScreenInterface
+    public function screenAt(Blueprint $blueprint, string $path, string $method): ?ScreenInterface
     {
         $root = $this->root($blueprint);
         $rest = trim(substr($path, strlen($root)), '/');
+        $screens = array_values(array_filter(
+            $blueprint->screens,
+            fn (ScreenInterface $screen): bool => $this->answers($screen, $method),
+        ));
 
-        foreach ($blueprint->screens as $screen) {
+        foreach ($screens as $screen) {
             if (trim($screen->path(), '/') === $rest) {
                 return $screen;
             }
         }
 
-        foreach ($blueprint->screens as $screen) {
+        foreach ($screens as $screen) {
             if ($this->pathMatches(trim($screen->path(), '/'), $rest)) {
                 return $screen;
             }
         }
 
         return null;
+    }
+
+    /**
+     * A screen answers its own method, and a submittable one also answers the POST
+     * {@see ModuleScanner} emits beside it at the same path.
+     */
+    private function answers(ScreenInterface $screen, string $method): bool
+    {
+        $method = strtoupper($method);
+
+        return $screen->method() === $method
+            || ($method === 'POST' && $screen instanceof SubmittableInterface);
     }
 
     /** Segment-wise match of a screen path against a request path. */
