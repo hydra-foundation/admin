@@ -11,6 +11,7 @@ use Hydra\Admin\ModuleScanner;
 use Hydra\Admin\Screens\ListScreen;
 use Hydra\Admin\Screens\PageScreen;
 use Hydra\Admin\Tests\Support\ArraySource;
+use Hydra\Admin\Tests\Support\SettingsController;
 use LogicException;
 use PHPUnit\Framework\TestCase;
 
@@ -88,5 +89,32 @@ final class PageScreenTest extends TestCase
             static fn ($screen): string => $screen->name(),
             $blueprint->screens,
         ));
+    }
+
+    public function test_a_page_answers_no_post_until_it_is_given_somewhere_to_send_one(): void
+    {
+        // A dashboard reads. Emitting a POST route for it would put a second
+        // way into a screen that has nothing to receive.
+        $this->assertNull(PageScreen::make('overview', 'admin/dashboard')->submitHandler());
+    }
+
+    public function test_a_page_that_saves_routes_a_post_at_its_own_url(): void
+    {
+        $blueprint = Definition::make('settings')
+            ->screens(
+                PageScreen::make('appearance', 'admin/settings/appearance')
+                    ->at('appearance')
+                    ->submittedTo([SettingsController::class, 'save']),
+            )
+            ->compile();
+
+        $routes = (new ModuleScanner)->scan([$blueprint], '/admin');
+
+        $this->assertSame(
+            [['GET', '/admin/settings/appearance'], ['POST', '/admin/settings/appearance']],
+            array_map(static fn (array $route): array => [$route['method'], $route['path']], $routes),
+        );
+        $this->assertSame([SettingsController::class, 'save'], $routes[1]['handler']);
+        $this->assertSame('settings.appearance.submit', $routes[1]['name']);
     }
 }

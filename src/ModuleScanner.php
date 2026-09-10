@@ -37,11 +37,13 @@ final class ModuleScanner
                     'name' => $name,
                 ];
 
-                if ($screen instanceof SubmittableInterface) {
+                $submit = $screen instanceof SubmittableInterface ? $screen->submitHandler() : null;
+
+                if ($submit !== null) {
                     $routes[] = [
                         'method' => 'POST',
                         'path' => $path,
-                        'handler' => $screen->submitHandler(),
+                        'handler' => $submit,
                         'middleware' => $middleware,
                         'name' => $name . '.submit',
                     ];

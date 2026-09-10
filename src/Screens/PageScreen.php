@@ -6,6 +6,7 @@ namespace Hydra\Admin\Screens;
 
 use Hydra\Admin\AdminController;
 use Hydra\Admin\Contracts\ScreenInterface;
+use Hydra\Admin\Contracts\SubmittableInterface;
 
 /**
  * Page screen
@@ -14,8 +15,11 @@ use Hydra\Admin\Contracts\ScreenInterface;
  * Left alone it renders through the admin's own controller; handledBy() points it
  * at one of your controller actions instead, which keeps the layout, breadcrumbs
  * and ability while the action is ordinary Hydra code.
+ *
+ * A page that saves adds submittedTo(): the same URL then answers a POST too,
+ * which is what a settings screen needs and a dashboard does not.
  */
-final class PageScreen implements ScreenInterface
+final class PageScreen implements ScreenInterface, SubmittableInterface
 {
     private string $path = '';
     private ?string $title = null;
@@ -24,6 +28,9 @@ final class PageScreen implements ScreenInterface
 
     /** @var array{0: class-string, 1: string}|null */
     private ?array $handler = null;
+
+    /** @var array{0: class-string, 1: string}|null */
+    private ?array $submit = null;
 
     private function __construct(
         private readonly string $name,
@@ -79,6 +86,20 @@ final class PageScreen implements ScreenInterface
         return $clone;
     }
 
+    /**
+     * Where a submission of this page goes. Declaring one is what puts a POST
+     * route at the page's own URL; without it the page only reads.
+     *
+     * @param array{0: class-string, 1: string} $handler
+     */
+    public function submittedTo(array $handler): self
+    {
+        $clone = clone $this;
+        $clone->submit = $handler;
+
+        return $clone;
+    }
+
     public function name(): string
     {
         return $this->name;
@@ -97,6 +118,11 @@ final class PageScreen implements ScreenInterface
     public function handler(): array
     {
         return $this->handler ?? [AdminController::class, 'page'];
+    }
+
+    public function submitHandler(): ?array
+    {
+        return $this->submit;
     }
 
     public function ability(): ?string
