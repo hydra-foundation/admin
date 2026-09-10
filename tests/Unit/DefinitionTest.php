@@ -59,6 +59,47 @@ final class DefinitionTest extends TestCase
         $this->assertSame(ArraySource::class, $blueprint->source);
     }
 
+    public function test_a_searchable_field_may_not_also_rewrite_its_value(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('both searchable() and format()');
+
+        Definition::make('activity')
+            ->source(new ArraySource)
+            ->fields(
+                Field::text('username')->searchable()
+                    ->format(static fn (mixed $value): string => (string) ($value ?? 'guest')),
+            )
+            ->compile();
+    }
+
+    public function test_a_searchable_field_may_decorate_what_it_shows(): void
+    {
+        $blueprint = Definition::make('activity')
+            ->source(new ArraySource)
+            ->fields(
+                Field::text('path')->searchable()
+                    ->decorate(static fn (mixed $value, array $row): string => $value . '?' . $row['query']),
+                Field::text('username')->searchable()->emptyAs('guest'),
+            )
+            ->compile();
+
+        $this->assertCount(2, $blueprint->searchable());
+    }
+
+    public function test_a_formatter_off_the_list_does_not_trip_the_search_rule(): void
+    {
+        $blueprint = Definition::make('users')
+            ->source(new ArraySource)
+            ->fields(
+                Field::text('username')->searchable()
+                    ->format(static fn (mixed $value): string => strtoupper((string) $value), Surface::Form),
+            )
+            ->compile();
+
+        $this->assertCount(1, $blueprint->searchable());
+    }
+
     public function test_the_blueprint_projects_fields_onto_surfaces(): void
     {
         $blueprint = Definition::make('users')

@@ -71,10 +71,6 @@ final class CriteriaTest extends TestCase
         $this->assertSame(50, $this->criteria(['page' => '3'])->offset());
     }
 
-    /**
-     * A source interpolates the direction and the page arithmetic straight into
-     * SQL, so the constructor — not just fromQuery() — has to normalise them.
-     */
     public function test_direct_construction_normalises_what_a_source_interpolates(): void
     {
         $criteria = new Criteria(page: -3, perPage: 0, direction: 'asc; DROP TABLE users');

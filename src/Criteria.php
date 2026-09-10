@@ -9,13 +9,9 @@ use Hydra\Http\Query;
 /**
  * Criteria
  *
- * A list screen's request state: which page, which order, which filters.
- *
- * The constructor normalises everything a source interpolates rather than binds
- * — page, per-page and direction — so those are safe however the object was
- * built. Column names are the exception: only fromQuery() can whitelist sort and
- * filter keys, because only it holds the blueprint that declares them, which is
- * why a source re-checks the sort column against its own allowlist.
+ * A list screen's request state: which page, which order, which filters. The
+ * constructor normalises what a source interpolates rather than binds; only
+ * fromQuery() can whitelist sort and filter keys against the blueprint.
  */
 final readonly class Criteria
 {

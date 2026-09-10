@@ -119,6 +119,8 @@ final class Definition
 
     public function compile(): Blueprint
     {
+        $this->assertSearchableFieldsAreFindable();
+
         $screens = $this->screens;
 
         if ($this->source !== null && $this->fields !== [] && $this->screenNamed('list') === null) {
@@ -155,6 +157,23 @@ final class Definition
             defaultSort: $this->defaultSort,
             defaultDirection: $this->defaultDirection,
         );
+    }
+
+    private function assertSearchableFieldsAreFindable(): void
+    {
+        foreach ($this->fields as $field) {
+            if (!$field->isSearchable() || !$field->rewritesValueOn(Surface::List)) {
+                continue;
+            }
+
+            throw new LogicException(sprintf(
+                'Admin module "%s" declares field "%s" as both searchable() and format(): '
+                . 'the search box would never find what the cell shows. Use decorate() when the '
+                . 'stored value survives into the output, or emptyAs() for a null placeholder.',
+                $this->slug,
+                $field->name(),
+            ));
+        }
     }
 
     private function screenNamed(string $name): ?ScreenInterface

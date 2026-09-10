@@ -8,6 +8,7 @@ use Hydra\Admin\Blueprint;
 use Hydra\Admin\Field;
 use Hydra\Admin\Page;
 use Hydra\Admin\Surface;
+use Hydra\View\HtmlView;
 
 /**
  * List view model
@@ -57,9 +58,9 @@ final readonly class ListViewModel
     }
 
     /** @param array<string, mixed> $row */
-    public function cell(Field $field, array $row): string
+    public function cell(Field $field, array $row): string|HtmlView
     {
-        return $field->display($row);
+        return $field->display(Surface::List, $row);
     }
 
     /** 'asc' or 'desc' when the table is ordered by this field, null otherwise. */

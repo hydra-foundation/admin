@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Hydra\Admin;
 
 use Closure;
+use Hydra\View\HtmlView;
+use LogicException;
 
 /**
  * Field
  *
  * One column of a module, declared once and projected onto every surface that
- * wants it: a table cell, a form control, an export column.
+ * wants it: a table cell, a form control, an export column. Display rules are
+ * declared per surface.
  */
 final class Field
 {
@@ -22,7 +25,12 @@ final class Field
     private bool $sortable = false;
     private bool $searchable = false;
     private bool $filterable = false;
-    private ?Closure $formatter = null;
+
+    /** @var array<string, array{fn: Closure, decorates: bool}> keyed by Surface->value */
+    private array $formatters = [];
+
+    /** @var array<string, string> keyed by Surface->value */
+    private array $placeholders = [];
 
     /** @param array<string, string>|null $options */
     private function __construct(
@@ -99,17 +107,42 @@ final class Field
         $clone = clone $this;
         $clone->surfaces = array_values(array_filter(
             $this->surfaces,
-            static fn (Surface $surface): bool => !in_array($surface, $surfaces, true),
+            static fn(Surface $surface): bool => !in_array($surface, $surfaces, true),
         ));
 
         return $clone;
     }
 
-    /** @param Closure(mixed, array<string, mixed>): string $formatter */
-    public function format(Closure $formatter): self
+    /**
+     * Replace the value for display, on every surface unless some are named.
+     * Rejected by {@see Definition::compile()} on a searchable() field.
+     *
+     * @param Closure(mixed, array<string, mixed>): (string|HtmlView) $formatter
+     */
+    public function format(Closure $formatter, Surface ...$on): self
+    {
+        return $this->withFormatter($formatter, false, $on);
+    }
+
+    /**
+     * format() for a formatter that leaves the stored value findable in its
+     * output, so the field may stay searchable().
+     *
+     * @param Closure(mixed, array<string, mixed>): (string|HtmlView) $formatter
+     */
+    public function decorate(Closure $formatter, Surface ...$on): self
+    {
+        return $this->withFormatter($formatter, true, $on);
+    }
+
+    /** What to show in place of a null or empty value. Not itself searchable. */
+    public function emptyAs(string $placeholder, Surface ...$on): self
     {
         $clone = clone $this;
-        $clone->formatter = $formatter;
+
+        foreach ($this->surfacesFor($on) as $surface) {
+            $clone->placeholders[$surface->value] = $placeholder;
+        }
 
         return $clone;
     }
@@ -155,13 +188,26 @@ final class Field
         return in_array($surface, $this->surfaces, true);
     }
 
+    public function rewritesValueOn(Surface $surface): bool
+    {
+        return ($this->formatters[$surface->value] ?? null) !== null
+            && !$this->formatters[$surface->value]['decorates'];
+    }
+
     /** @param array<string, mixed> $row */
-    public function display(array $row): string
+    public function display(Surface $surface, array $row): string|HtmlView
     {
         $value = $row[$this->name] ?? null;
+        $placeholder = $this->placeholders[$surface->value] ?? null;
 
-        if ($this->formatter !== null) {
-            return ($this->formatter)($value, $row);
+        if ($placeholder !== null && ($value === null || $value === '')) {
+            return $placeholder;
+        }
+
+        $formatter = $this->formatters[$surface->value]['fn'] ?? null;
+
+        if ($formatter !== null) {
+            return $this->formatted($formatter($value, $row));
         }
 
         if ($this->options !== null && is_scalar($value)) {
@@ -169,5 +215,40 @@ final class Field
         }
 
         return is_scalar($value) ? (string) $value : '';
+    }
+
+    /** @param list<Surface> $on */
+    private function withFormatter(Closure $formatter, bool $decorates, array $on): self
+    {
+        $clone = clone $this;
+
+        foreach ($this->surfacesFor($on) as $surface) {
+            $clone->formatters[$surface->value] = ['fn' => $formatter, 'decorates' => $decorates];
+        }
+
+        return $clone;
+    }
+
+    /**
+     * @param  list<Surface> $on
+     * @return list<Surface>
+     */
+    private function surfacesFor(array $on): array
+    {
+        return $on === [] ? Surface::cases() : array_values($on);
+    }
+
+    private function formatted(mixed $formatted): string|HtmlView
+    {
+        if (is_string($formatted) || $formatted instanceof HtmlView) {
+            return $formatted;
+        }
+
+        throw new LogicException(sprintf(
+            'The formatter for admin field "%s" returned %s; it must return a string or %s.',
+            $this->name,
+            get_debug_type($formatted),
+            HtmlView::class,
+        ));
     }
 }
