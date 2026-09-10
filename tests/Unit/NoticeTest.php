@@ -11,9 +11,9 @@ final class NoticeTest extends TestCase
 {
     public function test_a_success_is_a_status_update(): void
     {
-        $notice = Notice::success('Saved');
+        $notice = Notice::success('Saved.');
 
-        $this->assertSame('Saved', $notice->text);
+        $this->assertSame('Saved.', $notice->text);
         $this->assertSame('success', $notice->style());
         $this->assertSame('status', $notice->role());
     }

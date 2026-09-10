@@ -163,10 +163,10 @@ final class AdminController
         $saved = $source->find($id) ?? $submitted;
 
         if (SubmittedInput::fromRequest($request)->string('_action') === 'apply') {
-            return $this->form($request, $blueprint, $screen, $id, $saved, notice: Notice::success('Saved'));
+            return $this->form($request, $blueprint, $screen, $id, $saved, notice: Notice::success('Saved.'));
         }
 
-        return $this->done($request, $blueprint, Notice::success('Saved'));
+        return $this->done($request, $blueprint, Notice::success('Saved.'));
     }
 
     /**
