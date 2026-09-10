@@ -166,13 +166,25 @@ final readonly class ListViewModel
         return $this->link(['page' => $page > 1 ? (string) $page : null]);
     }
 
-    /** The page numbers worth rendering around the current one. @return list<int> */
+    /**
+     * The page numbers worth rendering around the current one: a run of at most
+     * 2 * radius + 1, centred on the current page where there is room and slid
+     * against either end where there is not, so the pager keeps its width
+     * instead of shrinking as the visitor reaches the edges.
+     *
+     * @return list<int>
+     */
     public function pageWindow(int $radius = 2): array
     {
         $last = $this->page->pages();
-        $current = $this->page->criteria->page;
+        $width = $radius * 2 + 1;
 
-        return range(max(1, min($current - $radius, $last - $radius * 2)), min($last, max($current + $radius, $radius * 2 + 1)));
+        $first = min(
+            max(1, $this->page->criteria->page - $radius),
+            max(1, $last - $width + 1),
+        );
+
+        return range($first, min($last, $first + $width - 1));
     }
 
     /**

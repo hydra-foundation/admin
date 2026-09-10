@@ -31,4 +31,13 @@ final class WriteRejected extends RuntimeException
     {
         return $this->errors;
     }
+
+    /**
+     * The refusal said in one line, for a screen with no form to hang the
+     * messages on their inputs — a delete has only a notice to say it in.
+     */
+    public function summary(): string
+    {
+        return implode(' ', $this->errors);
+    }
 }

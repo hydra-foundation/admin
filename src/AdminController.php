@@ -183,7 +183,7 @@ final class AdminController
             return $this->done(
                 $request,
                 $blueprint,
-                Notice::failure(implode(' ', $rejected->errors())),
+                Notice::failure($rejected->summary()),
                 Status::UnprocessableEntity,
             );
         }

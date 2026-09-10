@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hydra\Admin\Tests\Unit;
 
 use Hydra\Admin\AdminServiceProvider;
+use Hydra\Admin\Renderer;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -35,6 +36,50 @@ final class ShippedViewsTest extends TestCase
     public function test_the_shipped_views_are_where_the_provider_says_they_are(): void
     {
         $this->assertDirectoryExists(AdminServiceProvider::views());
+    }
+
+    /**
+     * The swap depths are a contract between markup and {@see Renderer}, held
+     * on both sides by a bare string: the templates aim at an id, the renderer
+     * reads the id back off the request. Renaming one and not the others is a
+     * silent wrong-depth render, so nothing here may aim anywhere else.
+     */
+    public function test_every_swap_aims_at_a_depth_the_renderer_knows(): void
+    {
+        $targets = $this->matchesInShippedViews('~hx-target="\#([a-z-]+)"~');
+
+        $this->assertNotEmpty($targets);
+        $this->assertSame(
+            [],
+            array_values(array_diff($targets, [Renderer::FRAME, Renderer::BODY])),
+            'a template swaps against an element the renderer does not answer for',
+        );
+    }
+
+    public function test_both_swap_depths_are_declared_exactly_once(): void
+    {
+        $declared = $this->matchesInShippedViews('#\bid="([a-z-]+)"#', unique: false);
+
+        foreach ([Renderer::FRAME, Renderer::BODY] as $depth) {
+            $this->assertSame(
+                1,
+                count(array_keys($declared, $depth, true)),
+                "\"{$depth}\" must be declared by exactly one shipped template",
+            );
+        }
+    }
+
+    /** @return list<string> */
+    private function matchesInShippedViews(string $pattern, bool $unique = true): array
+    {
+        $found = [];
+
+        foreach ($this->filesUnder(AdminServiceProvider::views()) as $file) {
+            preg_match_all($pattern, (string) file_get_contents($file), $matches);
+            $found = [...$found, ...$matches[1]];
+        }
+
+        return $unique ? array_values(array_unique($found)) : $found;
     }
 
     /**
