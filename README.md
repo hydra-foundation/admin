@@ -10,7 +10,7 @@ Hydra has no ORM, so nothing is inferred from a database. A module hands the
 admin a `SourceInterface` and owns its own SQL.
 
 Fields declare display rules per surface, so one declaration can read differently
-in a table cell and a form control:
+in a table cell and a detail row:
 
 - `format()` replaces the value. A source matches what the column *stores*, so a
   `searchable()` field may not also `format()` — `compile()` rejects it.

@@ -30,18 +30,18 @@ final class FieldTest extends TestCase
         $field = Field::text('username');
 
         $this->assertTrue($field->appearsOn(Surface::List));
-        $this->assertTrue($field->appearsOn(Surface::Form));
+        $this->assertTrue($field->appearsOn(Surface::Show));
         $this->assertTrue($field->appearsOn(Surface::Show));
     }
 
     public function test_only_on_and_hidden_on_narrow_the_surfaces(): void
     {
-        $only = Field::text('password')->onlyOn(Surface::Form);
-        $hidden = Field::text('username')->hiddenOn(Surface::Form);
+        $only = Field::text('password')->onlyOn(Surface::Show);
+        $hidden = Field::text('username')->hiddenOn(Surface::Show);
 
-        $this->assertTrue($only->appearsOn(Surface::Form));
+        $this->assertTrue($only->appearsOn(Surface::Show));
         $this->assertFalse($only->appearsOn(Surface::List));
-        $this->assertFalse($hidden->appearsOn(Surface::Form));
+        $this->assertFalse($hidden->appearsOn(Surface::Show));
         $this->assertTrue($hidden->appearsOn(Surface::List));
     }
 
@@ -70,8 +70,8 @@ final class FieldTest extends TestCase
         $everywhere = Field::text('username')->format(static fn (): string => 'x');
         $listOnly = Field::text('username')->format(static fn (): string => 'x', Surface::List);
 
-        $this->assertSame('x', $everywhere->display(Surface::Form, ['username' => 'ada']));
-        $this->assertSame('ada', $listOnly->display(Surface::Form, ['username' => 'ada']));
+        $this->assertSame('x', $everywhere->display(Surface::Show, ['username' => 'ada']));
+        $this->assertSame('ada', $listOnly->display(Surface::Show, ['username' => 'ada']));
         $this->assertSame('x', $listOnly->display(Surface::List, ['username' => 'ada']));
     }
 
@@ -116,7 +116,7 @@ final class FieldTest extends TestCase
         $this->assertTrue($plain->format(static fn (): string => 'x')->rewritesValueOn(Surface::List));
 
         $this->assertFalse(
-            $plain->format(static fn (): string => 'x', Surface::Form)->rewritesValueOn(Surface::List),
+            $plain->format(static fn (): string => 'x', Surface::Show)->rewritesValueOn(Surface::List),
         );
     }
 }

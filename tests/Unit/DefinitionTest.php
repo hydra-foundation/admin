@@ -93,7 +93,7 @@ final class DefinitionTest extends TestCase
             ->source(new ArraySource)
             ->fields(
                 Field::text('username')->searchable()
-                    ->format(static fn (mixed $value): string => strtoupper((string) $value), Surface::Form),
+                    ->format(static fn (mixed $value): string => strtoupper((string) $value), Surface::Show),
             )
             ->compile();
 
@@ -107,7 +107,7 @@ final class DefinitionTest extends TestCase
             ->fields(
                 Field::text('username')->sortable()->searchable(),
                 Field::select('role', ['admin' => 'Admin'])->filterable(),
-                Field::text('password')->onlyOn(Surface::Form),
+                Field::text('password')->onlyOn(Surface::Show),
             )
             ->compile();
 

@@ -12,7 +12,7 @@ use LogicException;
  * Field
  *
  * One column of a module, declared once and projected onto every surface that
- * wants it: a table cell, a form control, an export column. Display rules are
+ * wants it: a table cell, a detail row, an export column. Display rules are
  * declared per surface.
  */
 final class Field
@@ -20,7 +20,7 @@ final class Field
     private string $label;
 
     /** @var list<Surface> */
-    private array $surfaces = [Surface::List, Surface::Form, Surface::Show];
+    private array $surfaces = [Surface::List, Surface::Show];
 
     private bool $sortable = false;
     private bool $searchable = false;
