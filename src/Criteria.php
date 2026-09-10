@@ -9,21 +9,42 @@ use Hydra\Http\Query;
 /**
  * Criteria
  *
- * A list screen's request state: which page, which order, which filters. Built
- * only through fromQuery(), which whitelists sort and filter keys against the
- * blueprint — a source therefore never receives a column name it did not declare.
+ * A list screen's request state: which page, which order, which filters.
+ *
+ * The constructor normalises everything a source interpolates rather than binds
+ * — page, per-page and direction — so those are safe however the object was
+ * built. Column names are the exception: only fromQuery() can whitelist sort and
+ * filter keys, because only it holds the blueprint that declares them, which is
+ * why a source re-checks the sort column against its own allowlist.
  */
 final readonly class Criteria
 {
+    public int $page;
+    public int $perPage;
+    public ?string $sort;
+    public string $direction;
+
+    /** @var array<string, string> */
+    public array $filters;
+
+    public ?string $search;
+
     /** @param array<string, string> $filters */
     public function __construct(
-        public int $page = 1,
-        public int $perPage = 25,
-        public ?string $sort = null,
-        public string $direction = 'asc',
-        public array $filters = [],
-        public ?string $search = null,
-    ) {}
+        int $page = 1,
+        int $perPage = 25,
+        ?string $sort = null,
+        string $direction = 'asc',
+        array $filters = [],
+        ?string $search = null,
+    ) {
+        $this->page = max(1, $page);
+        $this->perPage = max(1, $perPage);
+        $this->sort = $sort;
+        $this->direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
+        $this->filters = $filters;
+        $this->search = $search;
+    }
 
     public static function fromQuery(Query $query, Blueprint $blueprint): self
     {
@@ -46,7 +67,7 @@ final readonly class Criteria
         $search = trim($query->string('q'));
 
         return new self(
-            page: max(1, $query->int('page', 1) ?? 1),
+            page: $query->int('page', 1) ?? 1,
             perPage: $blueprint->perPage,
             sort: $sort,
             direction: in_array($direction, ['asc', 'desc'], true) ? $direction : $blueprint->defaultDirection,

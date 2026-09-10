@@ -71,6 +71,25 @@ final class CriteriaTest extends TestCase
         $this->assertSame(50, $this->criteria(['page' => '3'])->offset());
     }
 
+    /**
+     * A source interpolates the direction and the page arithmetic straight into
+     * SQL, so the constructor — not just fromQuery() — has to normalise them.
+     */
+    public function test_direct_construction_normalises_what_a_source_interpolates(): void
+    {
+        $criteria = new Criteria(page: -3, perPage: 0, direction: 'asc; DROP TABLE users');
+
+        $this->assertSame(1, $criteria->page);
+        $this->assertSame(1, $criteria->perPage);
+        $this->assertSame('asc', $criteria->direction);
+        $this->assertSame(0, $criteria->offset());
+    }
+
+    public function test_direct_construction_keeps_a_legitimate_descending_order(): void
+    {
+        $this->assertSame('desc', (new Criteria(direction: 'DESC'))->direction);
+    }
+
     /** @param array<string, string> $query */
     private function criteria(array $query): Criteria
     {
